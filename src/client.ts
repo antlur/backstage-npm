@@ -1,11 +1,24 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import { getGlobalConfig, BackstageUserConfig } from "./config";
 
+type RequestConfig = {
+  headers?: Record<string, string>;
+  body?: any;
+  method?: string;
+  signal?: AbortSignal;
+};
+
+type RequestInterceptor = (config: RequestConfig) => RequestConfig;
+type ResponseInterceptor = (response: Response) => Promise<Response>;
+type ErrorHandler = (error: Error) => void;
+
 export class BackstageClient {
-  private instance: AxiosInstance;
+  private baseURL: string;
+  private defaultHeaders: Record<string, string>;
+  private requestInterceptors: RequestInterceptor[] = [];
+  private responseInterceptors: ResponseInterceptor[] = [];
+  private errorHandler?: ErrorHandler;
 
   constructor(config?: BackstageUserConfig) {
-    // If no config is passed, try to get from the global config
     const globalConfig = getGlobalConfig();
     const finalConfig = config || globalConfig;
 
@@ -13,7 +26,6 @@ export class BackstageClient {
       throw new Error("No Backstage config found. Please call defineConfig() or pass config to BackstageClient.");
     }
 
-    // check for token and accountId in the config
     if (!finalConfig.token) {
       throw new Error("No token found in the Backstage config. Please provide a token.");
     }
@@ -23,72 +35,78 @@ export class BackstageClient {
     }
 
     const { baseURL, token, onError } = finalConfig;
-
-    this.instance = axios.create({
-      baseURL,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-Account-ID": finalConfig.accountId,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
+    this.baseURL = baseURL;
+    this.errorHandler = onError;
+    this.defaultHeaders = {
+      Authorization: `Bearer ${token}`,
+      "X-Account-ID": finalConfig.accountId,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
 
     // Add request interceptor for debugging
-    this.instance.interceptors.request.use((requestConfig) => {
-      // console.log("Request:", {
-      //   method: requestConfig.method,
-      //   url: requestConfig.url,
-      //   headers: requestConfig.headers,
-      //   data: requestConfig.data,
-      // });
-      return requestConfig;
+    this.requestInterceptors.push((config) => {
+      console.log("Request:", {
+        method: config.method,
+        url: config.url,
+        headers: config.headers,
+        body: config.body,
+      });
+      return config;
     });
+  }
 
-    // Add response interceptor for debugging
-    this.instance.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        // console.error("API Error:", {
-        //   status: error.response?.status,
-        //   method: error.config?.method,
-        //   url: error.config?.url,
-        //   headers: error.config?.headers,
-        //   data: error.response?.data,
-        // });
-        if (onError) onError(error);
-        return Promise.reject(error);
+  private async request<T>(url: string, config: RequestConfig = {}): Promise<T> {
+    let finalConfig = {
+      ...config,
+      headers: { ...this.defaultHeaders, ...config.headers },
+      cache: "force-cache",
+    };
+
+    // Apply request interceptors
+    for (const interceptor of this.requestInterceptors) {
+      finalConfig = interceptor(finalConfig);
+    }
+
+    try {
+      let response = await fetch(`${this.baseURL}${url}`, finalConfig);
+
+      // Apply response interceptors
+      for (const interceptor of this.responseInterceptors) {
+        response = await interceptor(response);
       }
-    );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (this.errorHandler) {
+        this.errorHandler(error as Error);
+      }
+      throw error;
+    }
   }
 
-  public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.get<T>(url, config);
-    return response.data;
+  public async get<T = unknown>(url: string, config: RequestConfig = {}): Promise<T> {
+    return this.request<T>(url, { ...config, method: "GET" });
   }
 
-  public async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.post<T>(url, data, config);
-    return response.data;
+  public async post<T = unknown>(url: string, data?: unknown, config: RequestConfig = {}): Promise<T> {
+    return this.request<T>(url, { ...config, method: "POST", body: JSON.stringify(data) });
   }
 
-  public async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.put<T>(url, data, config);
-    return response.data;
+  public async put<T = unknown>(url: string, data?: unknown, config: RequestConfig = {}): Promise<T> {
+    return this.request<T>(url, { ...config, method: "PUT", body: JSON.stringify(data) });
   }
 
-  public async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.patch<T>(url, data, config);
-    return response.data;
+  public async patch<T = unknown>(url: string, data?: unknown, config: RequestConfig = {}): Promise<T> {
+    return this.request<T>(url, { ...config, method: "PATCH", body: JSON.stringify(data) });
   }
 
-  public async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.delete<T>(url, config);
-    return response.data;
-  }
-
-  public getAxiosInstance(): AxiosInstance {
-    return this.instance;
+  public async delete<T = unknown>(url: string, config: RequestConfig = {}): Promise<T> {
+    return this.request<T>(url, { ...config, method: "DELETE" });
   }
 }
 

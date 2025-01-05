@@ -1,31 +1,21 @@
-import { AxiosError } from "axios";
-
 const ROOT = process.cwd();
 const CONFIG_PATH = process.env.BACKSTAGE_CONFIG_PATH || "./backstage.config";
 const DEFAULT_BASE_URL = "https://bckstg.app/api";
 
 export interface BackstageUserConfig {
-  accountId?: string | undefined;
-  token?: string | undefined;
-  baseURL?: string;
-  onError?: (error: AxiosError) => void;
+  baseURL: string;
+  token: string;
+  accountId: string;
+  onError?: (error: Error) => void;
+  fetchOptions?: RequestInit;
 }
 
-let globalConfig: BackstageUserConfig = {
-  baseURL: process.env.BACKSTAGE_API_URL ?? DEFAULT_BASE_URL,
-  token: process.env.BACKSTAGE_API_KEY ?? undefined,
-  accountId: process.env.BACKSTAGE_ACCOUNT_ID ?? undefined,
-};
+let globalConfig: BackstageUserConfig | null = null;
 
-export function defineConfig(config: BackstageUserConfig): BackstageUserConfig {
-  globalConfig = {
-    ...globalConfig,
-    ...config,
-  };
-  return globalConfig;
+export function defineConfig(config: BackstageUserConfig): void {
+  globalConfig = config;
 }
 
-export function getGlobalConfig(): BackstageUserConfig {
-  // read the config from the project root
+export function getGlobalConfig(): BackstageUserConfig | null {
   return globalConfig;
 }
