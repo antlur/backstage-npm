@@ -12,7 +12,7 @@ export interface BackstageUserConfig {
 }
 
 let globalConfig: BackstageUserConfig = {
-  baseURL: DEFAULT_BASE_URL,
+  baseURL: process.env.BACKSTAGE_API_URL ?? DEFAULT_BASE_URL,
   token: process.env.BACKSTAGE_API_KEY ?? undefined,
   accountId: process.env.BACKSTAGE_ACCOUNT_ID ?? undefined,
 };
