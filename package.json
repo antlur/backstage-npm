@@ -1,16 +1,16 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A simple client for Backstage CMS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "test": "echo \"No tests yet\" && exit 0",
-    "publish": "npm run build && npm publish --access public",
-    "prepublishOnly": "npm test",
+    "prepublishOnly": "npm run build && npm test",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
