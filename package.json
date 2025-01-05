@@ -19,6 +19,9 @@
     "build:cjs": "tsc --project tsconfig.cjs.json",
     "build:esm": "tsc --project tsconfig.esm.json",
     "prepublishOnly": "npm run build && npm test",
+    "watch": "npm run watch:cjs & npm run watch:esm",
+    "watch:cjs": "tsc --project tsconfig.cjs.json --watch",
+    "watch:esm": "tsc --project tsconfig.esm.json --watch",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "dependencies": {
