@@ -36,12 +36,12 @@ export class BackstageClient {
 
     // Add request interceptor for debugging
     this.instance.interceptors.request.use((requestConfig) => {
-      console.log("Request:", {
-        method: requestConfig.method,
-        url: requestConfig.url,
-        headers: requestConfig.headers,
-        data: requestConfig.data,
-      });
+      // console.log("Request:", {
+      //   method: requestConfig.method,
+      //   url: requestConfig.url,
+      //   headers: requestConfig.headers,
+      //   data: requestConfig.data,
+      // });
       return requestConfig;
     });
 
@@ -49,13 +49,13 @@ export class BackstageClient {
     this.instance.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.error("API Error:", {
-          status: error.response?.status,
-          method: error.config?.method,
-          url: error.config?.url,
-          headers: error.config?.headers,
-          data: error.response?.data,
-        });
+        // console.error("API Error:", {
+        //   status: error.response?.status,
+        //   method: error.config?.method,
+        //   url: error.config?.url,
+        //   headers: error.config?.headers,
+        //   data: error.response?.data,
+        // });
         if (onError) onError(error);
         return Promise.reject(error);
       }

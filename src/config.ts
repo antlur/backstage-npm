@@ -13,15 +13,15 @@ export interface BackstageUserConfig {
 
 let globalConfig: BackstageUserConfig = {
   baseURL: DEFAULT_BASE_URL,
+  token: process.env.BACKSTAGE_API_KEY ?? undefined,
+  accountId: process.env.BACKSTAGE_ACCOUNT_ID ?? undefined,
 };
 
 export function defineConfig(config: BackstageUserConfig): BackstageUserConfig {
-  console.log("Define config", config);
   globalConfig = {
     ...globalConfig,
     ...config,
   };
-  console.log("Global config", globalConfig);
   return globalConfig;
 }
 
