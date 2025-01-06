@@ -3,6 +3,10 @@
   "author": "Anthony Holmes",
   "version": "1.0.10",
   "description": "A simple client for Backstage CMS",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antlur/backstage-npm"
+  },
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
