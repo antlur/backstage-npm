@@ -1,4 +1,4 @@
-import { GAEvents } from "../constants/google-events";
+import { GAEvents, GALocations } from "../constants/google-events";
 
 // Define gtag on window
 declare global {
@@ -18,6 +18,13 @@ interface GtagEventParams {
   label?: string;
   value?: number;
   page_url?: string;
+
+  // location is one of GALocations
+  location?: string;
+
+  // store is the slug of the store
+  store?: string | null | undefined;
+
   /** @deprecated Use category instead */
   event_category?: string;
   /** @deprecated Use label instead */

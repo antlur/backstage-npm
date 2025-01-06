@@ -1,4 +1,5 @@
-import { Event } from "../types";
+import type { Event, Location, Website } from "../types";
+import { Event as SchemaEvent, WithContext } from "schema-dts";
 
 export function isMultipleDays(start: Date, end: Date) {
   return start.getDate() !== end.getDate();
@@ -42,4 +43,35 @@ export function shortDescription(event: Event) {
 
   const shortDescription = event.description.substring(0, 100);
   return shortDescription;
+}
+
+export function makeEventSchema(website: Website, event: Event, locations: Location[]): WithContext<SchemaEvent> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "@id": `https://${website.domain}/events/${event.id}//#event`,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    url: `https://${website.domain}/events/${event.id}`,
+    name: event.title,
+    description: event.description,
+    startDate: event.start_time,
+    endDate: event.end_time,
+    location: [
+      {
+        "@type": "Place",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: locations[0].address,
+          addressLocality: locations[0].city,
+          addressRegion: locations[0].state,
+          postalCode: locations[0].zip,
+          addressCountry: "US",
+        },
+      },
+    ],
+    image: {
+      "@type": "ImageObject",
+      url: event.cover_media?.transform_url,
+    },
+  };
 }
