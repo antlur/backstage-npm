@@ -64,4 +64,6 @@ export interface Location {
     height: number;
     alt: string;
   };
+  status: string;
+  status_text: string;
 }
