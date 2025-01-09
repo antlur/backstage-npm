@@ -1,23 +1,24 @@
-import { client } from "../client";
-import { Page } from "../types/page";
-import { ApiCollectionResponse } from "../types/api";
+import { ApiCollectionResponse, Page } from "../types";
+import { BaseService } from "./base";
 
-export async function getPage(slug: string): Promise<Page> {
-  const res = await client().get<ApiCollectionResponse<Page>>(`/pages/?filter[slug]=${slug}`);
-  return res.data[0];
-}
+export class PageService extends BaseService {
+  async getPages(): Promise<Page[]> {
+    const res = await this.client.get<ApiCollectionResponse<Page>>("/pages");
+    return res.data;
+  }
 
-export async function getPages() {
-  const { data } = await client().get<ApiCollectionResponse<Page>>("/pages");
-  return data;
-}
+  async getPage(id: string): Promise<Page> {
+    const res = await this.client.get<ApiCollectionResponse<Page>>(`/pages/${id}`);
+    return res.data[0];
+  }
 
-export async function getHomePage() {
-  const res = await client().get<ApiCollectionResponse<Page>>("/pages?filter[slug]=/");
-  return res.data[0];
-}
+  async getPageBySlug(slug: string): Promise<Page> {
+    const res = await this.client.get<ApiCollectionResponse<Page>>(`/pages?filter[slug]=${slug}`);
+    return res.data[0];
+  }
 
-export async function getPageBySlug(slug: string) {
-  const res = await client().get<ApiCollectionResponse<Page>>("/pages?filter[slug]=" + slug);
-  return res.data[0];
+  async getHomePage(): Promise<Page> {
+    const res = await this.client.get<ApiCollectionResponse<Page>>("/pages?filter[slug]=/");
+    return res.data[0];
+  }
 }

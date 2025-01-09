@@ -1,7 +1,9 @@
-import { client } from "../client";
 import { ApiCollectionResponse, Alert } from "../types";
+import { BaseService } from "./base";
 
-export async function getAlerts() {
-  const { data } = await client().get<ApiCollectionResponse<Alert>>("/alerts");
-  return data;
+export class AlertService extends BaseService {
+  async getAlerts(): Promise<Alert[]> {
+    const { data } = await this.client.get<ApiCollectionResponse<Alert>>("/alerts");
+    return data;
+  }
 }

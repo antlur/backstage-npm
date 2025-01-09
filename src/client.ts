@@ -1,8 +1,26 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import { getGlobalConfig, BackstageUserConfig } from "./config";
+import { AlertService } from "./endpoints/alerts";
+import { EventService } from "./endpoints/events";
+import { LocationService } from "./endpoints/locations";
+import { MenuService } from "./endpoints/menus";
+import { NavigationService } from "./endpoints/navigation";
+import { PageService } from "./endpoints/pages";
+import { PressService } from "./endpoints/press";
+import { WebsiteService } from "./endpoints/website";
 
 export class BackstageClient {
   private instance: AxiosInstance;
+
+  // Service Instances
+  public readonly alerts: AlertService;
+  public readonly events: EventService;
+  public readonly locations: LocationService;
+  public readonly menus: MenuService;
+  public readonly navigation: NavigationService;
+  public readonly pages: PageService;
+  public readonly press: PressService;
+  public readonly website: WebsiteService;
 
   constructor(config?: BackstageUserConfig) {
     // If no config is passed, try to get from the global config
@@ -60,6 +78,16 @@ export class BackstageClient {
         return Promise.reject(error);
       }
     );
+
+    // Initialize service instances
+    this.alerts = new AlertService(this);
+    this.events = new EventService(this);
+    this.locations = new LocationService(this);
+    this.menus = new MenuService(this);
+    this.navigation = new NavigationService(this);
+    this.pages = new PageService(this);
+    this.press = new PressService(this);
+    this.website = new WebsiteService(this);
   }
 
   public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
@@ -91,7 +119,3 @@ export class BackstageClient {
     return this.instance;
   }
 }
-
-export const client = function (config?: BackstageUserConfig): BackstageClient {
-  return new BackstageClient(config);
-};

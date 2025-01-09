@@ -1,20 +1,19 @@
-import { client } from "../client";
 import { ApiCollectionResponse, Event } from "../types";
+import { BaseService } from "./base";
 
-export async function getEvents(): Promise<Event[]> {
-  const res = await client().get<ApiCollectionResponse<Event>>("/events");
-  const pages = res.data;
-  return pages;
-}
+export class EventService extends BaseService {
+  async getEvents(): Promise<Event[]> {
+    const { data } = await this.client.get<ApiCollectionResponse<Event>>("/events");
+    return data;
+  }
 
-export async function getEvent(id: string): Promise<Event> {
-  const res = await client().get<ApiCollectionResponse<Event>>("/events" + "?filter[id]=" + id);
-  const pages = res.data?.[0];
-  return pages;
-}
+  async getEvent(id: string): Promise<Event> {
+    const { data } = await this.client.get<ApiCollectionResponse<Event>>("/events" + "?filter[id]=" + id);
+    return data?.[0];
+  }
 
-export async function getEventBySlug(slug: string): Promise<Event> {
-  const res = await client().get<ApiCollectionResponse<Event>>("/events" + "?filter[slug]=" + slug);
-  const pages = res.data?.[0];
-  return pages;
+  async getEventBySlug(slug: string): Promise<Event> {
+    const { data } = await this.client.get<ApiCollectionResponse<Event>>("/events" + "?filter[slug]=" + slug);
+    return data?.[0];
+  }
 }

@@ -1,7 +1,9 @@
-import { client } from "../client";
 import { ApiCollectionResponse, Website } from "../types";
+import { BaseService } from "./base";
 
-export async function getWebsite(): Promise<Website> {
-  const res = await client().get<ApiCollectionResponse<Website>>("/websites");
-  return res.data[0];
+export class WebsiteService extends BaseService {
+  async getWebsite(): Promise<Website> {
+    const res = await this.client.get<ApiCollectionResponse<Website>>("/websites");
+    return res.data[0];
+  }
 }
