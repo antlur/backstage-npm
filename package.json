@@ -1,7 +1,7 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A simple client for Backstage CMS",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -16,6 +16,11 @@
       "require": "./dist/cjs/types/index.js",
       "import": "./dist/esm/types/index.js",
       "types": "./dist/types/types/*.d.ts"
+    },
+    "./studio": {
+      "require": "./dist/cjs/studio/index.js",
+      "import": "./dist/esm/studio/index.js",
+      "types": "./dist/types/studio/*.d.ts"
     },
     "./*": {
       "require": "./dist/cjs/*.js",

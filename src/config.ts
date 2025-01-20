@@ -1,4 +1,5 @@
 import { AxiosError } from "axios";
+import type { BlockDefinition } from "./studio/types";
 
 const ROOT = process.cwd();
 const CONFIG_PATH = process.env.BACKSTAGE_CONFIG_PATH || "./backstage.config";
@@ -8,6 +9,7 @@ export interface BackstageUserConfig {
   accountId?: string | undefined;
   token?: string | undefined;
   baseURL?: string;
+  blocks?: BlockDefinition<any>[] | undefined;
   onError?: (error: AxiosError) => void;
 }
 

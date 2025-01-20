@@ -11,3 +11,5 @@ export * from "./navigation";
 export * from "./page";
 export * from "./press";
 export * from "./website";
+
+export * from "../studio/types/index";
