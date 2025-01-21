@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import { getGlobalConfig, BackstageUserConfig } from "./config";
 import { AlertService } from "./endpoints/alerts";
+import { BlocksService } from "./endpoints/blocks";
 import { EventService } from "./endpoints/events";
 import { LocationService } from "./endpoints/locations";
 import { MenuService } from "./endpoints/menus";
@@ -14,6 +15,7 @@ export class BackstageClient {
 
   // Service Instances
   public readonly alerts: AlertService;
+  public readonly blocks: BlocksService;
   public readonly events: EventService;
   public readonly locations: LocationService;
   public readonly menus: MenuService;
@@ -81,6 +83,7 @@ export class BackstageClient {
 
     // Initialize service instances
     this.alerts = new AlertService(this);
+    this.blocks = new BlocksService(this);
     this.events = new EventService(this);
     this.locations = new LocationService(this);
     this.menus = new MenuService(this);
