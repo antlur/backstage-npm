@@ -8,6 +8,7 @@ export interface BlockSchema<TFields extends Record<string, Field<any>>> {
 
 export interface BlockDefinition<TFields extends Record<string, Field<any>>> {
   name: string;
+  slug: string;
   schema: BlockSchema<TFields>;
   component: React.ComponentType<BlockComponentProps<FieldValues<TFields>>>;
 }
