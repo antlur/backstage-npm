@@ -1,5 +1,7 @@
 import { BlockSchema, Field } from "./types";
 
-export function defineSchema<TFields extends Record<string, Field<any>>>(schema: BlockSchema<TFields>) {
+export type SchemaFields = Record<string, Field>;
+
+export function defineSchema<T extends SchemaFields>(schema: BlockSchema<T>) {
   return schema;
 }

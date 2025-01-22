@@ -1,14 +1,27 @@
-import { BlockSchema, BlockDefinition, BlockComponentProps, Field } from "./types";
+import { BlockSchema, BlockDefinition, BlockComponentProps } from "./types";
 
-export type FieldValues<TFields extends Record<string, Field<any>>> = {
-  [K in keyof TFields]: TFields[K]["value"];
-};
-
-export function defineBlock<TFields extends Record<string, Field<any>>>(options: {
+export function defineBlock(options: {
   name: string;
   slug: string;
-  schema: BlockSchema<TFields>;
-  component: React.ComponentType<BlockComponentProps<FieldValues<TFields>>>; // Correct typing here
-}): BlockDefinition<TFields> {
+  schema: BlockSchema<any>;
+  component: React.ComponentType<BlockComponentProps<typeof options.schema>>;
+}): BlockDefinition<typeof options.schema.fields> {
+  // Runtime validation
+  if (!options.name || typeof options.name !== "string") {
+    throw new Error("Block name is required and must be a string");
+  }
+
+  if (!options.slug || typeof options.slug !== "string") {
+    throw new Error("Block slug is required and must be a string");
+  }
+
+  if (!options.schema || typeof options.schema !== "object") {
+    throw new Error("Block schema is required and must be an object");
+  }
+
+  if (!options.component) {
+    throw new Error("Block component is required");
+  }
+
   return options;
 }

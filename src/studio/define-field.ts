@@ -1,5 +1,5 @@
 import { Field } from "./types";
 
-export function defineField<TValue>(field: Field<TValue>): Field<TValue> {
+export function defineField<T extends Field>(field: T): T {
   return field;
 }
