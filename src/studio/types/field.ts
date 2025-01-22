@@ -1,25 +1,26 @@
 import { MediaItem } from "../../types";
 
+type Nullable<T> = T | null;
+
 export type FieldTypeToValue = {
-  boolean: boolean;
-  event_select: string;
-  form_select: string;
-  image: MediaItem;
-  image_list: MediaItem[];
-  list_array: string[];
-  media: MediaItem;
-  menu_select: string;
-  number: number;
-  press_select: string;
-  repeater: any[];
-  rich_text: string;
+  boolean: Nullable<boolean>;
+  event_select: Nullable<string>;
+  form_select: Nullable<string>;
+  image: Nullable<MediaItem>;
+  image_list: Nullable<MediaItem[]>;
+  list_array: Nullable<string[]>;
+  media: Nullable<MediaItem>;
+  menu_select: Nullable<string>;
+  number: Nullable<number>;
+  press_select: Nullable<string>;
+  repeater: Nullable<any[]>;
+  rich_text: Nullable<string>;
   separator: never;
   spacer: never;
-  text: string;
-  textarea: string;
-  url: string;
+  text: Nullable<string>;
+  textarea: Nullable<string>;
+  url: Nullable<string>;
 };
-
 export type FieldType = keyof FieldTypeToValue;
 
 export type BaseField = {
