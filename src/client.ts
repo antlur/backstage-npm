@@ -3,6 +3,7 @@ import { getGlobalConfig, BackstageUserConfig } from "./config";
 import { AlertService } from "./endpoints/alerts";
 import { BlocksService } from "./endpoints/blocks";
 import { EventService } from "./endpoints/events";
+import { LayoutService } from "./endpoints/layouts";
 import { LocationService } from "./endpoints/locations";
 import { MenuService } from "./endpoints/menus";
 import { NavigationService } from "./endpoints/navigation";
@@ -17,6 +18,7 @@ export class BackstageClient {
   public readonly alerts: AlertService;
   public readonly blocks: BlocksService;
   public readonly events: EventService;
+  public readonly layouts: LayoutService;
   public readonly locations: LocationService;
   public readonly menus: MenuService;
   public readonly navigation: NavigationService;
@@ -85,6 +87,7 @@ export class BackstageClient {
     this.alerts = new AlertService(this);
     this.blocks = new BlocksService(this);
     this.events = new EventService(this);
+    this.layouts = new LayoutService(this);
     this.locations = new LocationService(this);
     this.menus = new MenuService(this);
     this.navigation = new NavigationService(this);

@@ -10,6 +10,7 @@ export interface BackstageUserConfig {
   token?: string | undefined;
   baseURL?: string;
   blocks?: BlockDefinition<any>[] | undefined;
+  layouts?: any[] | undefined;
   onError?: (error: AxiosError) => void;
 }
 
