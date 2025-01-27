@@ -21,4 +21,11 @@ export interface Page {
   settings: Settings;
   meta: Meta;
   is_home: boolean;
+  pathname: string;
+  layout: {
+    id: string;
+    name: string;
+    slug: string;
+    schema: any;
+  };
 }

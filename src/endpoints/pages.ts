@@ -21,4 +21,9 @@ export class PageService extends BaseService {
     const res = await this.client.get<ApiCollectionResponse<Page>>("/pages?filter[slug]=/");
     return res.data[0];
   }
+
+  async byPathname(pathname: string): Promise<Page> {
+    const res = await this.client.get<ApiCollectionResponse<Page>>(`/pages?filter[pathname]=${pathname}`);
+    return res.data[0];
+  }
 }
