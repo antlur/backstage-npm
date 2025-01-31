@@ -8,6 +8,7 @@ export { BackstageClient } from "./client";
 export * from "./endpoints/alerts";
 export * from "./endpoints/events";
 export * from "./endpoints/locations";
+export * from "./endpoints/media";
 export * from "./endpoints/menus";
 export * from "./endpoints/navigation";
 export * from "./endpoints/pages";

@@ -10,6 +10,7 @@ import { NavigationService } from "./endpoints/navigation";
 import { PageService } from "./endpoints/pages";
 import { PressService } from "./endpoints/press";
 import { WebsiteService } from "./endpoints/website";
+import { MediaService } from "./endpoints/media";
 
 export class BackstageClient {
   private instance: AxiosInstance;
@@ -20,6 +21,7 @@ export class BackstageClient {
   public readonly events: EventService;
   public readonly layouts: LayoutService;
   public readonly locations: LocationService;
+  public readonly media: MediaService;
   public readonly menus: MenuService;
   public readonly navigation: NavigationService;
   public readonly pages: PageService;
@@ -89,6 +91,7 @@ export class BackstageClient {
     this.events = new EventService(this);
     this.layouts = new LayoutService(this);
     this.locations = new LocationService(this);
+    this.media = new MediaService(this);
     this.menus = new MenuService(this);
     this.navigation = new NavigationService(this);
     this.pages = new PageService(this);
