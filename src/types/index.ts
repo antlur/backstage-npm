@@ -1,6 +1,7 @@
 export * from "./alert";
 export * from "./api";
 export * from "./event";
+export * from "./instagram";
 export * from "./location";
 export * from "./media-item";
 export * from "./menu-category-item";

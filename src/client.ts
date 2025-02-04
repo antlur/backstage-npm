@@ -3,6 +3,7 @@ import { getGlobalConfig, BackstageUserConfig } from "./config";
 import { AlertService } from "./endpoints/alerts";
 import { BlocksService } from "./endpoints/blocks";
 import { EventService } from "./endpoints/events";
+import { InstagramService } from "./endpoints/instagram";
 import { LayoutService } from "./endpoints/layouts";
 import { LocationService } from "./endpoints/locations";
 import { MenuService } from "./endpoints/menus";
@@ -19,6 +20,7 @@ export class BackstageClient {
   public readonly alerts: AlertService;
   public readonly blocks: BlocksService;
   public readonly events: EventService;
+  public readonly instagram: InstagramService;
   public readonly layouts: LayoutService;
   public readonly locations: LocationService;
   public readonly media: MediaService;
@@ -89,6 +91,7 @@ export class BackstageClient {
     this.alerts = new AlertService(this);
     this.blocks = new BlocksService(this);
     this.events = new EventService(this);
+    this.instagram = new InstagramService(this);
     this.layouts = new LayoutService(this);
     this.locations = new LocationService(this);
     this.media = new MediaService(this);
