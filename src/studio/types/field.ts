@@ -20,6 +20,7 @@ export type FieldTypeToValue = {
   text: Nullable<string>;
   textarea: Nullable<string>;
   url: Nullable<string>;
+  naviation_select: Nullable<string>;
 };
 export type FieldType = keyof FieldTypeToValue;
 
