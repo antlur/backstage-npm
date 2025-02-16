@@ -1,42 +1,34 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "A simple client for Backstage CMS",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
+  "type": "module",
+  "main": "./dist/index.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/cjs/index.js",
-      "import": "./dist/esm/index.js",
+      "import": "./dist/index.js",
       "types": "./dist/types/index.d.ts"
     },
     "./types": {
-      "require": "./dist/cjs/types/index.js",
-      "import": "./dist/esm/types/index.js",
+      "import": "./dist/types/index.js",
       "types": "./dist/types/types/*.d.ts"
     },
     "./studio": {
-      "require": "./dist/cjs/studio/index.js",
-      "import": "./dist/esm/studio/index.js",
+      "import": "./dist/studio/index.js",
       "types": "./dist/types/studio/*.d.ts"
     },
     "./*": {
-      "require": "./dist/cjs/*.js",
-      "import": "./dist/esm/*.js",
+      "import": "./dist/*.js",
       "types": "./dist/types/*.d.ts"
     }
   },
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "npm run clean && npm run build:cjs && npm run build:esm",
-    "build:cjs": "tsc --project tsconfig.cjs.json",
-    "build:esm": "tsc --project tsconfig.esm.json",
+    "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build && npm test",
-    "watch": "npm run watch:cjs & npm run watch:esm",
-    "watch:cjs": "tsc --project tsconfig.cjs.json --watch",
-    "watch:esm": "tsc --project tsconfig.esm.json --watch",
+    "watch": "tsc --watch",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "peerDependencies": {
