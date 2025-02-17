@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, InstagramPost } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class InstagramService extends BaseService {
   async latest(): Promise<InstagramPost[]> {

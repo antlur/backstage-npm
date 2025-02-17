@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Media } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class MediaService extends BaseService {
   async all() {

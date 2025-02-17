@@ -1,5 +1,5 @@
 import { ApiSingleResponse } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 interface BlockParams {
   name: string;

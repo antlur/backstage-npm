@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Press } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class PressService extends BaseService {
   async getPress(): Promise<Press[]> {

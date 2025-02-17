@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Website } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class WebsiteService extends BaseService {
   async getWebsite(): Promise<Website> {

@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Event } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class EventService extends BaseService {
   async getEvents(): Promise<Event[]> {

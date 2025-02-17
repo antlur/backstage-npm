@@ -1,17 +1,17 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
-import { getGlobalConfig, BackstageUserConfig } from "./config";
-import { AlertService } from "./endpoints/alerts";
-import { BlocksService } from "./endpoints/blocks";
-import { EventService } from "./endpoints/events";
-import { InstagramService } from "./endpoints/instagram";
-import { LayoutService } from "./endpoints/layouts";
-import { LocationService } from "./endpoints/locations";
-import { MenuService } from "./endpoints/menus";
-import { NavigationService } from "./endpoints/navigation";
-import { PageService } from "./endpoints/pages";
-import { PressService } from "./endpoints/press";
-import { WebsiteService } from "./endpoints/website";
-import { MediaService } from "./endpoints/media";
+import { getGlobalConfig, BackstageUserConfig } from "./config.js";
+import { AlertService } from "./endpoints/alerts.js";
+import { BlocksService } from "./endpoints/blocks.js";
+import { EventService } from "./endpoints/events.js";
+import { InstagramService } from "./endpoints/instagram.js";
+import { LayoutService } from "./endpoints/layouts.js";
+import { LocationService } from "./endpoints/locations.js";
+import { MenuService } from "./endpoints/menus.js";
+import { NavigationService } from "./endpoints/navigation.js";
+import { PageService } from "./endpoints/pages.js";
+import { PressService } from "./endpoints/press.js";
+import { WebsiteService } from "./endpoints/website.js";
+import { MediaService } from "./endpoints/media.js";
 
 export class BackstageClient {
   private instance: AxiosInstance;

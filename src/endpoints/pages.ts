@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Page } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class PageService extends BaseService {
   async getPages(): Promise<Page[]> {

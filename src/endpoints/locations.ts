@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Location } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class LocationService extends BaseService {
   async getLocations(): Promise<Location[]> {

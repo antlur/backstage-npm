@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Alert } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class AlertService extends BaseService {
   async getAlerts(): Promise<Alert[]> {

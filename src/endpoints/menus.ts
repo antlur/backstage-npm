@@ -1,5 +1,5 @@
 import { ApiCollectionResponse, Menu } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class MenuService extends BaseService {
   async getMenus(): Promise<Menu[]> {

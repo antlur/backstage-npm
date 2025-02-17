@@ -1,5 +1,5 @@
 import { ApiSingleResponse, ApiCollectionResponse, Navigation } from "../types";
-import { BaseService } from "./base";
+import { BaseService } from "./base.js";
 
 export class NavigationService extends BaseService {
   async getNavigations(): Promise<Navigation[]> {
