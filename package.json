@@ -28,7 +28,7 @@
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
     "prepublishOnly": "npm run build && npm test",
-    "watch": "tsc --watch",
+    "dev": "tsc --watch",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "peerDependencies": {
