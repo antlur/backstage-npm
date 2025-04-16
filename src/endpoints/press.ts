@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, Press } from "../types";
+import { ApiCollectionResponse, Press } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 export class PressService extends BaseService {

@@ -1,5 +1,5 @@
 import { AxiosError } from "axios";
-import type { BlockDefinition } from "./studio/types";
+import type { BlockDefinition } from "./studio/types/index.js";
 
 const ROOT = process.cwd();
 const CONFIG_PATH = process.env.BACKSTAGE_CONFIG_PATH || "./backstage.config";

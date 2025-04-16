@@ -1,6 +1,6 @@
 import path from "path";
 import { createServer, mergeConfig, loadConfigFromFile } from "vite";
-import type { BackstageUserConfig } from "../config";
+import type { BackstageUserConfig } from "../config.js";
 
 export async function loadBackstageConfig(): Promise<BackstageUserConfig | null> {
   try {

@@ -1,4 +1,4 @@
-import { ApiSingleResponse } from "../types";
+import { ApiSingleResponse } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 interface BlockParams {

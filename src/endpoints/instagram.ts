@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, InstagramPost } from "../types";
+import { ApiCollectionResponse, InstagramPost } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 export class InstagramService extends BaseService {

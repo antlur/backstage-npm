@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, Media } from "../types";
+import { ApiCollectionResponse, Media } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 export class MediaService extends BaseService {

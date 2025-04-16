@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, Alert } from "../types";
+import { ApiCollectionResponse, Alert } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 export class AlertService extends BaseService {

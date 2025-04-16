@@ -1,4 +1,4 @@
-import { ApiSingleResponse, ApiCollectionResponse, Navigation } from "../types";
+import { ApiSingleResponse, ApiCollectionResponse, Navigation } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 export class NavigationService extends BaseService {

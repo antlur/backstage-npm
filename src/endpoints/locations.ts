@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, Location } from "../types";
+import { ApiCollectionResponse, Location } from "../types/index.js";
 import { BaseService } from "./base.js";
 
 export class LocationService extends BaseService {

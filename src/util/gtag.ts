@@ -1,4 +1,4 @@
-import { GAEvents, GALocations } from "../constants/google-events";
+import { GAEvents, GALocations } from "../constants/google-events.js";
 
 // Define gtag on window
 declare global {
