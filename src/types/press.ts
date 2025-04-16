@@ -10,4 +10,5 @@ export interface Press {
   featured_media?: MediaItem;
   excerpt: string;
   content: string;
+  is_featured: boolean;
 }
