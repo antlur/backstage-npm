@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, Event } from "../types/index.js";
+import type { ApiCollectionResponse, Event } from "../types/index";
 import { BaseService } from "./base.js";
 
 export class EventService extends BaseService {

@@ -1,4 +1,4 @@
-import { ApiSingleResponse } from "../types/index.js";
+import type { ApiSingleResponse } from "../types/index";
 import { BaseService } from "./base.js";
 
 interface LayoutParams {

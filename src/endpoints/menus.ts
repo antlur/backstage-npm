@@ -1,4 +1,4 @@
-import { ApiCollectionResponse, Menu } from "../types/index.js";
+import type { ApiCollectionResponse, Menu } from "../types/index";
 import { BaseService } from "./base.js";
 
 export class MenuService extends BaseService {
