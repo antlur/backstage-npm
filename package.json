@@ -1,7 +1,7 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "description": "A simple client for Backstage CMS",
   "type": "module",
   "main": "./dist/index.js",
