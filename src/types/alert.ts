@@ -17,4 +17,7 @@ export interface Alert {
   content: string | null;
   cta_label: string | null;
   cta_url: string | null;
+  analytics_name: string | null;
+  analytics_category: string | null;
+  analytics_label: string | null;
 }
