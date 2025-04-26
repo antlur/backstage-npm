@@ -20,4 +20,5 @@ export interface Alert {
   analytics_name: string | null;
   analytics_category: string | null;
   analytics_label: string | null;
+  position: string | null;
 }
