@@ -1,8 +1,6 @@
 import { AxiosError } from "axios";
 import type { BlockDefinition } from "./studio/types/index.js";
 
-const ROOT = process.cwd();
-const CONFIG_PATH = process.env.BACKSTAGE_CONFIG_PATH || "./backstage.config";
 const DEFAULT_BASE_URL = "https://bckstg.app/api";
 
 export interface BackstageUserConfig {
