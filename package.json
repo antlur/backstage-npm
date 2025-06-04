@@ -1,7 +1,7 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.10.2",
+  "version": "1.11.0",
   "description": "A simple client for Backstage CMS",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,7 +18,7 @@
     },
     "./studio": {
       "import": "./dist/studio/index.js",
-      "types": "./dist/types/studio/*.d.ts"
+      "types": "./dist/studio/index.d.ts"
     },
     "./config": {
       "import": "./dist/config.js",

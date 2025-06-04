@@ -1,11 +1,11 @@
-import { LayoutSchema, LayoutDefinition, LayoutComponentProps } from "./types";
+import { LayoutSchema, LayoutDefinition, LayoutComponentProps, Field } from "./types";
 
-export function defineLayout(options: {
+export function defineLayout<T extends readonly Field[]>(options: {
   name: string;
   slug: string;
-  schema: LayoutSchema<any>;
-  component: React.ComponentType<LayoutComponentProps<typeof options.schema>>;
-}): LayoutDefinition<typeof options.schema.fields> {
+  schema: LayoutSchema<T>;
+  component: React.ComponentType<LayoutComponentProps<LayoutSchema<T>>>;
+}): LayoutDefinition<T> {
   // Runtime validation
   if (!options.name || typeof options.name !== "string") {
     throw new Error("Layout name is required and must be a string");

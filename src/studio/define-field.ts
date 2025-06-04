@@ -1,5 +1,10 @@
-import { Field } from "./types";
+import { Field, FieldType, BaseField } from "./types";
 
-export function defineField<T extends Field>(field: T): T {
+// More precise typing for defineField
+export function defineField<
+  TSlug extends string,
+  TType extends FieldType,
+  TField extends BaseField & { slug: TSlug; type: TType }
+>(field: TField): TField {
   return field;
 }

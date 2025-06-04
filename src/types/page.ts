@@ -1,6 +1,6 @@
 export interface Block {
   id: string;
-  block: string;
+  slug: string;
   data: any;
 }
 

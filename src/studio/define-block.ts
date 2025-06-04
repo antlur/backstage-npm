@@ -1,10 +1,10 @@
-import { BlockSchema, BlockDefinition, BlockComponentProps } from "./types";
+import { BlockSchema, BlockDefinition, BlockComponent } from "./types";
 
 export function defineBlock(options: {
   name: string;
   slug: string;
   schema: BlockSchema<any>;
-  component: React.ComponentType<BlockComponentProps<typeof options.schema>>;
+  component: BlockComponent<typeof options.schema>;
 }): BlockDefinition<typeof options.schema.fields> {
   // Runtime validation
   if (!options.name || typeof options.name !== "string") {
