@@ -1,11 +1,11 @@
-import { BlockSchema, BlockDefinition, BlockComponent } from "./types";
+import { BlockSchema, BlockDefinition, BlockComponent, Field } from "./types";
 
-export function defineBlock(options: {
+export function defineBlock<TFields extends readonly Field[]>(options: {
   name: string;
   slug: string;
-  schema: BlockSchema<any>;
-  component: BlockComponent<typeof options.schema>;
-}): BlockDefinition<typeof options.schema.fields> {
+  schema: BlockSchema<TFields>;
+  component: BlockComponent<BlockSchema<TFields>>;
+}): BlockDefinition<TFields> {
   // Runtime validation
   if (!options.name || typeof options.name !== "string") {
     throw new Error("Block name is required and must be a string");
