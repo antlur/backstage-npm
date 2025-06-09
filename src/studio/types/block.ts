@@ -17,6 +17,7 @@ export interface BlockSchema<TFields extends readonly Field[]> {
 export interface BlockDefinition<TFields extends readonly Field[]> {
   name: string;
   slug: string;
+  description?: string;
   schema: BlockSchema<TFields>;
   component: BlockComponent<BlockSchema<TFields>>;
 }

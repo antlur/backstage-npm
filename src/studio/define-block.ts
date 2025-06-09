@@ -3,6 +3,7 @@ import { BlockSchema, BlockDefinition, BlockComponent, Field } from "./types";
 export function defineBlock<TFields extends readonly Field[]>(options: {
   name: string;
   slug: string;
+  description?: string;
   schema: BlockSchema<TFields>;
   component: BlockComponent<BlockSchema<TFields>>;
 }): BlockDefinition<TFields> {

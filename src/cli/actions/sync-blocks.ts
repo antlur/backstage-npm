@@ -13,6 +13,7 @@ export async function syncBlocks(config: BackstageUserConfig) {
     const blockData = {
       name: block.name,
       slug: block.slug,
+      description: block?.description ?? null,
       schema: block.schema,
     };
 
