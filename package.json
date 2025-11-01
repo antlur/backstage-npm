@@ -3,6 +3,19 @@
   "author": "Anthony Holmes",
   "version": "1.11.1",
   "description": "A simple client for Backstage CMS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antlur/backstage-npm.git"
+  },
+  "keywords": [
+    "cms",
+    "backstage",
+    "headless-cms",
+    "content-management",
+    "api-client",
+    "typescript"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

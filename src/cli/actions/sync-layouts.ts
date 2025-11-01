@@ -9,7 +9,7 @@ export async function syncLayouts(config: BackstageUserConfig) {
     return;
   }
 
-  config.layouts.forEach(async (layout) => {
+  const syncPromises = config.layouts.map(async (layout) => {
     const layoutData = {
       name: layout.name,
       slug: layout.slug,
@@ -18,19 +18,23 @@ export async function syncLayouts(config: BackstageUserConfig) {
 
     try {
       await client.layouts.create(layoutData);
-      console.log(`Layout ${layout.slug} created`);
+      console.log(`✓ Layout ${layout.slug} created`);
     } catch (err: any) {
-      if (err.response.status === 409) {
+      if (err?.response?.status === 409) {
         const id = err.response.data;
-        console.log(`Layout ${layout.slug} already exists with id ${id}. Updating...`);
+        console.log(`⚠ Layout ${layout.slug} already exists with id ${id}. Updating...`);
         try {
-          const res = await client.layouts.update(id, layoutData);
-          console.log(`Layout ${layout.slug} updated`, res);
-        } catch (err) {
-          console.error(`Error updating layout ${layout.slug}:`, err);
+          await client.layouts.update(id, layoutData);
+          console.log(`✓ Layout ${layout.slug} updated`);
+        } catch (updateErr: any) {
+          console.error(`✗ Failed to update layout ${layout.slug}:`, updateErr?.message || updateErr);
         }
-        return;
+      } else {
+        console.error(`✗ Failed to create layout ${layout.slug}:`, err?.message || err);
       }
     }
   });
+
+  await Promise.all(syncPromises);
+  console.log(`\nSync complete: ${config.layouts.length} layout(s) processed`);
 }

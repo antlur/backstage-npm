@@ -5,18 +5,25 @@ interface BlockParams {
   name: string;
   slug: string;
   schema: any;
+  description?: string;
 }
 
 export class BlocksService extends BaseService {
-  async all() {}
+  /**
+   * Get all blocks
+   * @todo Implement this method when the API endpoint is available
+   */
+  async all() {
+    throw new Error("Method not implemented. Please use the Backstage API documentation for available endpoints.");
+  }
 
-  async create({ name, slug, schema }: BlockParams) {
-    const res = await this.client.post<ApiSingleResponse<BlockParams>>("/blocks", { name, slug, schema });
+  async create(params: BlockParams) {
+    const res = await this.client.post<ApiSingleResponse<BlockParams>>("/blocks", params);
     return res.data;
   }
 
-  async update(id: string, { name, slug, schema }: BlockParams) {
-    const res = await this.client.put<ApiSingleResponse<BlockParams>>(`/blocks/${id}`, { name, slug, schema });
+  async update(id: string, params: BlockParams) {
+    const res = await this.client.put<ApiSingleResponse<BlockParams>>(`/blocks/${id}`, params);
     return res.data;
   }
 }

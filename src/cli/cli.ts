@@ -26,20 +26,23 @@ program
     }
 
     if (type === "blocks") {
-      syncBlocks(backstageConfig);
+      await syncBlocks(backstageConfig);
+      return;
     }
 
     if (type === "layouts") {
-      syncLayouts(backstageConfig);
+      await syncLayouts(backstageConfig);
+      return;
     }
 
     if (type === "all") {
-      syncBlocks(backstageConfig);
-      syncLayouts(backstageConfig);
+      await syncBlocks(backstageConfig);
+      await syncLayouts(backstageConfig);
+      return;
     }
 
-    console.error(`Unknown type: ${type}`);
-    return;
+    console.error(`Unknown type: ${type}. Valid types are: blocks, layouts, all`);
+    process.exit(1);
   });
 
 program.parse();

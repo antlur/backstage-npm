@@ -27,6 +27,7 @@ export type FieldType = keyof FieldTypeToValue;
 export type BaseField = {
   name: string;
   slug: string;
+  description?: string;
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: any }>;
