@@ -11,4 +11,9 @@ export interface Press {
   excerpt: string;
   content: string;
   is_featured: boolean;
+  locations: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
 }
