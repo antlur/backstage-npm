@@ -13,6 +13,7 @@ export * from "./endpoints/menus.js";
 export * from "./endpoints/navigation.js";
 export * from "./endpoints/pages.js";
 export * from "./endpoints/press.js";
+export * from "./endpoints/routes.js";
 export * from "./endpoints/website.js";
 
 // Re-export domain types

@@ -11,6 +11,7 @@ export type * from "./menu";
 export type * from "./navigation";
 export type * from "./page";
 export type * from "./press";
+export type * from "./route";
 export type * from "./website";
 
 export type * from "../studio/types/index.js";

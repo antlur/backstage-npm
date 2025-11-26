@@ -10,6 +10,7 @@ import { MenuService } from "./endpoints/menus.js";
 import { NavigationService } from "./endpoints/navigation.js";
 import { PageService } from "./endpoints/pages.js";
 import { PressService } from "./endpoints/press.js";
+import { RouteService } from "./endpoints/routes.js";
 import { WebsiteService } from "./endpoints/website.js";
 import { MediaService } from "./endpoints/media.js";
 
@@ -28,6 +29,7 @@ export class BackstageClient {
   public readonly navigation: NavigationService;
   public readonly pages: PageService;
   public readonly press: PressService;
+  public readonly routes: RouteService;
   public readonly website: WebsiteService;
 
   constructor(config?: BackstageUserConfig) {
@@ -99,6 +101,7 @@ export class BackstageClient {
     this.navigation = new NavigationService(this);
     this.pages = new PageService(this);
     this.press = new PressService(this);
+    this.routes = new RouteService(this);
     this.website = new WebsiteService(this);
   }
 
