@@ -1,3 +1,5 @@
+import { Navigation } from "./navigation";
+
 export interface SocialLink {
   name: string;
   url: string | null;
@@ -69,6 +71,8 @@ export interface Website {
   font_families: FontFamily[] | null;
   header_navigation_id: string | null;
   footer_navigation_id: string | null;
+  header_navigation: Navigation | null;
+  footer_navigation: Navigation | null;
   social_links: SocialLink[];
   home_cta_text: string | null;
   home_cta_url: string | null;
