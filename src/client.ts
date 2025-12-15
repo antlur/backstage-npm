@@ -1,4 +1,3 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 import { getGlobalConfig, BackstageUserConfig } from "./config.js";
 import { AlertService } from "./endpoints/alerts.js";
 import { BlocksService } from "./endpoints/blocks.js";
@@ -15,7 +14,10 @@ import { WebsiteService } from "./endpoints/website.js";
 import { MediaService } from "./endpoints/media.js";
 
 export class BackstageClient {
-  private instance: AxiosInstance;
+  private baseURL: string;
+  private token: string;
+  private accountId: string;
+  private onError?: (error: Error) => void;
 
   // Service Instances
   public readonly alerts: AlertService;
@@ -50,44 +52,10 @@ export class BackstageClient {
       throw new Error("No accountId found in the Backstage config. Please provide an accountId.");
     }
 
-    const { baseURL, token, onError } = finalConfig;
-
-    this.instance = axios.create({
-      baseURL,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-Account-ID": finalConfig.accountId,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
-
-    // Add request interceptor for debugging
-    this.instance.interceptors.request.use((requestConfig) => {
-      // console.log("Request:", {
-      //   method: requestConfig.method,
-      //   url: requestConfig.url,
-      //   headers: requestConfig.headers,
-      //   data: requestConfig.data,
-      // });
-      return requestConfig;
-    });
-
-    // Add response interceptor for debugging
-    this.instance.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        // console.error("API Error:", {
-        //   status: error.response?.status,
-        //   method: error.config?.method,
-        //   url: error.config?.url,
-        //   headers: error.config?.headers,
-        //   data: error.response?.data,
-        // });
-        if (onError) onError(error);
-        return Promise.reject(error);
-      }
-    );
+    this.baseURL = finalConfig.baseURL!;
+    this.token = finalConfig.token;
+    this.accountId = finalConfig.accountId;
+    this.onError = finalConfig.onError;
 
     // Initialize service instances
     this.alerts = new AlertService(this);
@@ -105,32 +73,58 @@ export class BackstageClient {
     this.website = new WebsiteService(this);
   }
 
-  public async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.get<T>(url, config);
-    return response.data;
+  private async request<T = unknown>(method: string, url: string, data?: unknown): Promise<T> {
+    const fullUrl = `${this.baseURL}${url}`;
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.token}`,
+      "X-Account-ID": this.accountId,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+
+    const options: RequestInit = {
+      method,
+      headers,
+    };
+
+    if (data && (method === "POST" || method === "PUT" || method === "PATCH")) {
+      options.body = JSON.stringify(data);
+    }
+
+    try {
+      const response = await fetch(fullUrl, options);
+      if (!response.ok) {
+        const errorText = await response.text();
+        const error = new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+        (error as any).status = response.status;
+        (error as any).response = { status: response.status, data: errorText };
+        if (this.onError) this.onError(error);
+        throw error;
+      }
+      return await response.json();
+    } catch (error) {
+      if (this.onError) this.onError(error as Error);
+      throw error;
+    }
   }
 
-  public async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.post<T>(url, data, config);
-    return response.data;
+  public async get<T = unknown>(url: string): Promise<T> {
+    return this.request<T>("GET", url);
   }
 
-  public async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.put<T>(url, data, config);
-    return response.data;
+  public async post<T = unknown>(url: string, data?: unknown): Promise<T> {
+    return this.request<T>("POST", url, data);
   }
 
-  public async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.patch<T>(url, data, config);
-    return response.data;
+  public async put<T = unknown>(url: string, data?: unknown): Promise<T> {
+    return this.request<T>("PUT", url, data);
   }
 
-  public async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.instance.delete<T>(url, config);
-    return response.data;
+  public async patch<T = unknown>(url: string, data?: unknown): Promise<T> {
+    return this.request<T>("PATCH", url, data);
   }
 
-  public getAxiosInstance(): AxiosInstance {
-    return this.instance;
+  public async delete<T = unknown>(url: string): Promise<T> {
+    return this.request<T>("DELETE", url);
   }
 }

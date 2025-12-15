@@ -1,4 +1,3 @@
-import { AxiosError } from "axios";
 import type { BlockDefinition } from "./studio/types/index.js";
 
 const DEFAULT_BASE_URL = "https://bckstg.app/api";
@@ -9,7 +8,7 @@ export interface BackstageUserConfig {
   baseURL?: string;
   blocks?: BlockDefinition<any>[] | undefined;
   layouts?: any[] | undefined;
-  onError?: (error: AxiosError) => void;
+  onError?: (error: Error) => void;
 }
 
 let globalConfig: BackstageUserConfig = {
