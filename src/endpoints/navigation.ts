@@ -2,25 +2,25 @@ import type { ApiSingleResponse, ApiCollectionResponse, Navigation } from "../ty
 import { BaseService } from "./base.js";
 
 export class NavigationService extends BaseService {
-  async getNavigations(): Promise<Navigation[]> {
-    const res = await this.client.get<ApiCollectionResponse<Navigation>>("/navigations");
+  async getNavigations(options?: RequestInit): Promise<Navigation[]> {
+    const res = await this.client.get<ApiCollectionResponse<Navigation>>("/navigations", options);
     const navigations = res.data;
 
     return Promise.all(
       navigations.map(async (navigation: any) => {
-        const res = await this.client.get<ApiCollectionResponse<Navigation>>("/navigations/" + navigation.id);
+        const res = await this.client.get<ApiCollectionResponse<Navigation>>("/navigations/" + navigation.id, options);
         return res.data[0];
       })
     );
   }
 
-  async getDefaultNavigation(): Promise<Navigation> {
-    const navigations = await this.getNavigations();
+  async getDefaultNavigation(options?: RequestInit): Promise<Navigation> {
+    const navigations = await this.getNavigations(options);
     return navigations[0];
   }
 
-  async getNavigation(id: string): Promise<Navigation> {
-    const res = await this.client.get<ApiSingleResponse<Navigation>>(`/navigations/${id}`);
+  async getNavigation(id: string, options?: RequestInit): Promise<Navigation> {
+    const res = await this.client.get<ApiSingleResponse<Navigation>>(`/navigations/${id}`, options);
     const navigation = res.data;
 
     const topLevelItems = navigation.items.filter((item: any) => item.parent_id === null);

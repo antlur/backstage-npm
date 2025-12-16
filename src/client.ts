@@ -73,26 +73,27 @@ export class BackstageClient {
     this.website = new WebsiteService(this);
   }
 
-  private async request<T = unknown>(method: string, url: string, data?: unknown): Promise<T> {
+  private async request<T = unknown>(method: string, url: string, data?: unknown, options?: RequestInit): Promise<T> {
     const fullUrl = `${this.baseURL}${url}`;
-    const headers: Record<string, string> = {
+    const defaultHeaders: Record<string, string> = {
       Authorization: `Bearer ${this.token}`,
       "X-Account-ID": this.accountId,
       Accept: "application/json",
       "Content-Type": "application/json",
     };
 
-    const options: RequestInit = {
+    const fetchOptions: RequestInit = {
       method,
-      headers,
+      headers: { ...defaultHeaders, ...options?.headers },
+      ...options,
     };
 
-    if (data && (method === "POST" || method === "PUT" || method === "PATCH")) {
-      options.body = JSON.stringify(data);
+    if (data && !fetchOptions.body && (method === "POST" || method === "PUT" || method === "PATCH")) {
+      fetchOptions.body = JSON.stringify(data);
     }
 
     try {
-      const response = await fetch(fullUrl, options);
+      const response = await fetch(fullUrl, fetchOptions);
       if (!response.ok) {
         const errorText = await response.text();
         const error = new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
@@ -108,23 +109,23 @@ export class BackstageClient {
     }
   }
 
-  public async get<T = unknown>(url: string): Promise<T> {
-    return this.request<T>("GET", url);
+  public async get<T = unknown>(url: string, options?: RequestInit): Promise<T> {
+    return this.request<T>("GET", url, undefined, options);
   }
 
-  public async post<T = unknown>(url: string, data?: unknown): Promise<T> {
-    return this.request<T>("POST", url, data);
+  public async post<T = unknown>(url: string, data?: unknown, options?: RequestInit): Promise<T> {
+    return this.request<T>("POST", url, data, options);
   }
 
-  public async put<T = unknown>(url: string, data?: unknown): Promise<T> {
-    return this.request<T>("PUT", url, data);
+  public async put<T = unknown>(url: string, data?: unknown, options?: RequestInit): Promise<T> {
+    return this.request<T>("PUT", url, data, options);
   }
 
-  public async patch<T = unknown>(url: string, data?: unknown): Promise<T> {
-    return this.request<T>("PATCH", url, data);
+  public async patch<T = unknown>(url: string, data?: unknown, options?: RequestInit): Promise<T> {
+    return this.request<T>("PATCH", url, data, options);
   }
 
-  public async delete<T = unknown>(url: string): Promise<T> {
-    return this.request<T>("DELETE", url);
+  public async delete<T = unknown>(url: string, options?: RequestInit): Promise<T> {
+    return this.request<T>("DELETE", url, undefined, options);
   }
 }

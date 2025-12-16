@@ -8,15 +8,19 @@ interface LayoutParams {
 }
 
 export class LayoutService extends BaseService {
-  async all() {}
+  async all(options?: RequestInit) {}
 
-  async create({ name, slug, schema }: LayoutParams) {
-    const res = await this.client.post<ApiSingleResponse<LayoutParams>>("/layouts", { name, slug, schema });
+  async create({ name, slug, schema }: LayoutParams, options?: RequestInit) {
+    const res = await this.client.post<ApiSingleResponse<LayoutParams>>("/layouts", { name, slug, schema }, options);
     return res.data;
   }
 
-  async update(id: string, { name, slug, schema }: LayoutParams) {
-    const res = await this.client.put<ApiSingleResponse<LayoutParams>>(`/layouts/${id}`, { name, slug, schema });
+  async update(id: string, { name, slug, schema }: LayoutParams, options?: RequestInit) {
+    const res = await this.client.put<ApiSingleResponse<LayoutParams>>(
+      `/layouts/${id}`,
+      { name, slug, schema },
+      options
+    );
     return res.data;
   }
 }
