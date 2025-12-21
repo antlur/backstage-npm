@@ -21,6 +21,7 @@ export type FieldTypeToValue = {
   textarea: Nullable<string>;
   url: Nullable<string>;
   navigation_select: Nullable<string>;
+  page_select: Nullable<string>;
 };
 export type FieldType = keyof FieldTypeToValue;
 
@@ -31,6 +32,7 @@ export type BaseField = {
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: any }>;
+  fields?: Field[];
 };
 
 export type Field = {

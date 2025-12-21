@@ -1,3 +1,5 @@
+import { MenuCategory } from "./menu-category";
+
 export interface Menu {
   id: string;
   slug: string;
@@ -6,7 +8,10 @@ export interface Menu {
   subtitle: string | null;
   account_id: string;
   pdf_url: string | null;
-  categories: string[]; // You can replace this with the actual type for categories if needed
+  categories: MenuCategory[];
+  published_at: string | null;
   created_at: string;
   updated_at: string;
+  // Pivot fields when attached to a location
+  order?: number;
 }

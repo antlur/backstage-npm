@@ -11,6 +11,7 @@ export interface FontFamily {
 }
 
 export interface ThemeColors {
+  palette?: Array<{ name: string; value: string }>;
   primary?: string;
   primaryForeground: string;
   secondary?: string;
@@ -83,6 +84,7 @@ export interface Website {
   app_name: string;
   domain: string;
   favicon_url: string | null;
+  apple_icon_url: string | null;
   logo: Logo | null;
   account: Account;
   meta: WebsiteMeta;
@@ -99,5 +101,4 @@ export interface Website {
   social_links: SocialLink[];
   home_cta_text: string | null;
   home_cta_url: string | null;
-  has_accessibility_widget: boolean;
 }

@@ -1,3 +1,5 @@
+import { AccountLayout } from "./account-layout";
+
 export interface Block {
   id: string;
   slug: string;
@@ -17,15 +19,10 @@ export interface Page {
   id: string;
   title: string;
   slug: string;
+  pathname: string;
   blocks: Block[];
   settings: Settings;
   meta: Meta;
   is_home: boolean;
-  pathname: string;
-  layout: {
-    id: string;
-    name: string;
-    slug: string;
-    schema: any;
-  };
+  layout: AccountLayout | null;
 }

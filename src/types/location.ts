@@ -1,3 +1,5 @@
+import { Menu } from "./menu";
+
 export interface Location {
   id: string;
   account_id: string;
@@ -13,6 +15,8 @@ export interface Location {
   zip: string;
   map_link: string | null;
   map_embed: string | null;
+  map_embed_query: string | null;
+  map_embed_zoom: number | null;
   latitude: number | null;
   longitude: number | null;
   phone: string;
@@ -64,6 +68,7 @@ export interface Location {
     height: number;
     alt: string;
   };
+  menus: Menu[];
   status: string;
   status_text: string;
 }
