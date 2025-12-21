@@ -71,7 +71,7 @@ export function makeEventSchema(website: Website, event: Event, locations: Locat
     ],
     image: {
       "@type": "ImageObject",
-      url: event.cover_media?.transform_url,
+      url: event.cover_media?.url,
     },
   };
 }
