@@ -101,4 +101,5 @@ export interface Website {
   social_links: SocialLink[];
   home_cta_text: string | null;
   home_cta_url: string | null;
+  has_accessibility_widget: boolean;
 }
