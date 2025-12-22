@@ -1,7 +1,10 @@
 import { getGlobalConfig, BackstageUserConfig } from "./config.js";
 import { AlertService } from "./endpoints/alerts.js";
+import { AuthService } from "./endpoints/auth.js";
 import { BlocksService } from "./endpoints/blocks.js";
+import { EntryService } from "./endpoints/entries.js";
 import { EventService } from "./endpoints/events.js";
+import { FormService } from "./endpoints/forms.js";
 import { InstagramService } from "./endpoints/instagram.js";
 import { LayoutService } from "./endpoints/layouts.js";
 import { LocationService } from "./endpoints/locations.js";
@@ -9,6 +12,7 @@ import { MenuService } from "./endpoints/menus.js";
 import { NavigationService } from "./endpoints/navigation.js";
 import { PageService } from "./endpoints/pages.js";
 import { PressService } from "./endpoints/press.js";
+import { RedirectService } from "./endpoints/redirects.js";
 import { RouteService } from "./endpoints/routes.js";
 import { WebsiteService } from "./endpoints/website.js";
 import { MediaService } from "./endpoints/media.js";
@@ -21,8 +25,11 @@ export class BackstageClient {
 
   // Service Instances
   public readonly alerts: AlertService;
+  public readonly auth: AuthService;
   public readonly blocks: BlocksService;
+  public readonly entries: EntryService;
   public readonly events: EventService;
+  public readonly forms: FormService;
   public readonly instagram: InstagramService;
   public readonly layouts: LayoutService;
   public readonly locations: LocationService;
@@ -31,6 +38,7 @@ export class BackstageClient {
   public readonly navigation: NavigationService;
   public readonly pages: PageService;
   public readonly press: PressService;
+  public readonly redirects: RedirectService;
   public readonly routes: RouteService;
   public readonly website: WebsiteService;
 
@@ -59,8 +67,11 @@ export class BackstageClient {
 
     // Initialize service instances
     this.alerts = new AlertService(this);
+    this.auth = new AuthService(this);
     this.blocks = new BlocksService(this);
+    this.entries = new EntryService(this);
     this.events = new EventService(this);
+    this.forms = new FormService(this);
     this.instagram = new InstagramService(this);
     this.layouts = new LayoutService(this);
     this.locations = new LocationService(this);
@@ -69,6 +80,7 @@ export class BackstageClient {
     this.navigation = new NavigationService(this);
     this.pages = new PageService(this);
     this.press = new PressService(this);
+    this.redirects = new RedirectService(this);
     this.routes = new RouteService(this);
     this.website = new WebsiteService(this);
   }

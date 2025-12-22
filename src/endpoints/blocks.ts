@@ -1,29 +1,46 @@
-import type { ApiSingleResponse } from "../types/index";
+import type { ApiCollectionResponse, ApiSingleResponse, AccountBlock } from "../types/index";
 import { BaseService } from "./base.js";
 
-interface BlockParams {
+export interface CreateBlockParams {
   name: string;
   slug: string;
   schema: any;
   description?: string;
 }
 
+export interface UpdateBlockParams {
+  name?: string;
+  slug?: string;
+  schema?: any;
+  description?: string;
+}
+
 export class BlocksService extends BaseService {
-  /**
-   * Get all blocks
-   * @todo Implement this method when the API endpoint is available
-   */
-  async all(options?: RequestInit) {
-    throw new Error("Method not implemented. Please use the Backstage API documentation for available endpoints.");
+  async list(options?: RequestInit): Promise<AccountBlock[]> {
+    const { data } = await this.client.get<ApiCollectionResponse<AccountBlock>>("/blocks", options);
+    return data;
   }
 
-  async create(params: BlockParams, options?: RequestInit) {
-    const res = await this.client.post<ApiSingleResponse<BlockParams>>("/blocks", params, options);
-    return res.data;
+  async get(id: string, options?: RequestInit): Promise<AccountBlock | null> {
+    try {
+      const { data } = await this.client.get<ApiSingleResponse<AccountBlock>>(`/blocks/${id}`, options);
+      return data;
+    } catch (error) {
+      return null;
+    }
   }
 
-  async update(id: string, params: BlockParams, options?: RequestInit) {
-    const res = await this.client.put<ApiSingleResponse<BlockParams>>(`/blocks/${id}`, params, options);
-    return res.data;
+  async create(params: CreateBlockParams, options?: RequestInit): Promise<AccountBlock> {
+    const { data } = await this.client.post<ApiSingleResponse<AccountBlock>>("/blocks", params, options);
+    return data;
+  }
+
+  async update(id: string, params: UpdateBlockParams, options?: RequestInit): Promise<AccountBlock> {
+    const { data } = await this.client.put<ApiSingleResponse<AccountBlock>>(`/blocks/${id}`, params, options);
+    return data;
+  }
+
+  async delete(id: string, options?: RequestInit): Promise<void> {
+    await this.client.delete(`/blocks/${id}`, options);
   }
 }

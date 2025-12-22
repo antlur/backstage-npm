@@ -1,26 +1,44 @@
-import type { ApiSingleResponse } from "../types/index";
+import type { ApiCollectionResponse, ApiSingleResponse, AccountLayout } from "../types/index";
 import { BaseService } from "./base.js";
 
-interface LayoutParams {
+export interface CreateLayoutParams {
   name: string;
   slug: string;
   schema: any;
 }
 
-export class LayoutService extends BaseService {
-  async all(options?: RequestInit) {}
+export interface UpdateLayoutParams {
+  name?: string;
+  slug?: string;
+  schema?: any;
+}
 
-  async create({ name, slug, schema }: LayoutParams, options?: RequestInit) {
-    const res = await this.client.post<ApiSingleResponse<LayoutParams>>("/layouts", { name, slug, schema }, options);
-    return res.data;
+export class LayoutService extends BaseService {
+  async list(options?: RequestInit): Promise<AccountLayout[]> {
+    const { data } = await this.client.get<ApiCollectionResponse<AccountLayout>>("/layouts", options);
+    return data;
   }
 
-  async update(id: string, { name, slug, schema }: LayoutParams, options?: RequestInit) {
-    const res = await this.client.put<ApiSingleResponse<LayoutParams>>(
-      `/layouts/${id}`,
-      { name, slug, schema },
-      options
-    );
-    return res.data;
+  async get(id: string, options?: RequestInit): Promise<AccountLayout | null> {
+    try {
+      const { data } = await this.client.get<ApiSingleResponse<AccountLayout>>(`/layouts/${id}`, options);
+      return data;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async create(params: CreateLayoutParams, options?: RequestInit): Promise<AccountLayout> {
+    const { data } = await this.client.post<ApiSingleResponse<AccountLayout>>("/layouts", params, options);
+    return data;
+  }
+
+  async update(id: string, params: UpdateLayoutParams, options?: RequestInit): Promise<AccountLayout> {
+    const { data } = await this.client.put<ApiSingleResponse<AccountLayout>>(`/layouts/${id}`, params, options);
+    return data;
+  }
+
+  async delete(id: string, options?: RequestInit): Promise<void> {
+    await this.client.delete(`/layouts/${id}`, options);
   }
 }

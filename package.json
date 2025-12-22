@@ -1,7 +1,7 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.12.9",
+  "version": "1.12.10",
   "description": "A simple client for Backstage CMS",
   "license": "MIT",
   "repository": {

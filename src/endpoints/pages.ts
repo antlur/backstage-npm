@@ -1,5 +1,27 @@
-import type { ApiCollectionResponse, Page } from "../types/index";
+import type { ApiCollectionResponse, ApiSingleResponse, Page } from "../types/index";
 import { BaseService } from "./base.js";
+
+export interface CreatePageParams {
+  title: string;
+  slug: string;
+  blocks?: any[];
+  settings?: any;
+  is_home?: boolean;
+  layout_id?: string;
+  seo_title?: string;
+  seo_description?: string;
+}
+
+export interface UpdatePageParams {
+  title?: string;
+  slug?: string;
+  blocks?: any[];
+  settings?: any;
+  is_home?: boolean;
+  layout_id?: string;
+  seo_title?: string;
+  seo_description?: string;
+}
 
 export class PageService extends BaseService {
   async getPages(options?: RequestInit): Promise<Page[]> {
@@ -37,5 +59,19 @@ export class PageService extends BaseService {
       return null;
     }
     return res.data[0];
+  }
+
+  async createPage(params: CreatePageParams, options?: RequestInit): Promise<Page> {
+    const { data } = await this.client.post<ApiSingleResponse<Page>>("/pages", params, options);
+    return data;
+  }
+
+  async updatePage(id: string, params: UpdatePageParams, options?: RequestInit): Promise<Page> {
+    const { data } = await this.client.put<ApiSingleResponse<Page>>(`/pages/${id}`, params, options);
+    return data;
+  }
+
+  async deletePage(id: string, options?: RequestInit): Promise<void> {
+    await this.client.delete(`/pages/${id}`, options);
   }
 }
