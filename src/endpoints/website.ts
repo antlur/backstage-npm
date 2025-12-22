@@ -19,11 +19,12 @@ export class WebsiteService extends BaseService {
     return data;
   }
 
-  async getWebsite(id?: string, options?: RequestInit): Promise<Website> {
-    if (id) {
-      const { data } = await this.client.get<ApiSingleResponse<Website>>(`/websites/${id}`, options);
-      return data;
-    }
+  async getWebsite(options?: RequestInit): Promise<Website> {
+    // Handle case where id might be an object (e.g., RequestInit passed as first param)
+    // if (id && typeof id === "string") {
+    //   const { data } = await this.client.get<ApiSingleResponse<Website>>(`/websites/${id}`, options);
+    //   return data;
+    // }
     const res = await this.client.get<ApiCollectionResponse<Website>>("/websites", options);
     return res.data[0];
   }
@@ -38,8 +39,9 @@ export class WebsiteService extends BaseService {
     return data;
   }
 
-  async routes(websiteId?: string, options?: RequestInit): Promise<string[]> {
-    const id = websiteId || (await this.getWebsite()).id;
-    return this.client.get<string[]>(`/websites/${id}/routes`, options);
+  async routes(options?: RequestInit): Promise<string[]> {
+    // const id = websiteId || (await this.getWebsite()).id;
+    const website = await this.getWebsite();
+    return this.client.get<string[]>(`/websites/${website.id}/routes`, options);
   }
 }
