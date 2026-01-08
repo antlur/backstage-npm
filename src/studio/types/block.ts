@@ -1,11 +1,20 @@
 import { Field, FieldType, FieldTypeToValue } from "./field";
+import { Entry } from "../../types/entry";
+
+type Nullable<T> = T | null;
 
 // Type for field values from array-based fields
 type FieldValues<T extends readonly Field[]> = {
-  [K in T[number]["slug"]]: Extract<T[number], { slug: K }> extends { type: infer Type }
-    ? Type extends FieldType
-      ? FieldTypeToValue[Type]
-      : never
+  [K in T[number]["slug"]]: Extract<T[number], { slug: K }> extends infer FieldDef
+    ? FieldDef extends { type: 'reference'; is_multiple: true }
+      ? Nullable<Entry[]>
+      : FieldDef extends { type: 'reference' }
+        ? Nullable<Entry>
+        : FieldDef extends { type: infer Type }
+          ? Type extends FieldType
+            ? FieldTypeToValue[Type]
+            : never
+          : never
     : never;
 };
 

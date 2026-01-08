@@ -143,6 +143,59 @@ export const heroBlock = defineBlock({
 });
 ```
 
+## Using Reference Fields
+
+Reference fields allow you to link to entries from specific blueprints. You can constrain which blueprints are allowed:
+
+```typescript
+// blocks/testimonials/schema.ts
+import { defineBlockSchema, defineField } from "@antlur/backstage/studio";
+
+const testimonialFields = [
+  defineField({
+    name: "Customers",
+    slug: "customers",
+    type: "reference",
+    description: "Select customer entries",
+    allowed_references: ["customers"], // Only allow entries from the "customers" blueprint
+    is_multiple: true, // Allow multiple customer selections
+    required: true,
+  }),
+  defineField({
+    name: "Quote",
+    slug: "quote",
+    type: "textarea",
+    description: "The testimonial quote",
+    required: true,
+  }),
+];
+
+export const schema = defineBlockSchema({
+  fields: testimonialFields,
+});
+```
+
+In your component, the reference field will contain the full entry data:
+
+```typescript
+// blocks/testimonials/component.tsx
+import type { BlockComponentProps } from "@antlur/backstage/studio";
+import schema from "./schema";
+
+export default function Testimonials({ block }: BlockComponentProps<typeof schema>) {
+  const { customers, quote } = block.fields;
+
+  return (
+    <div className="testimonial">
+      <blockquote>"{quote}"</blockquote>
+      <cite>
+        - {customers.map(customer => customer.name).join(", ")}
+      </cite> {/* Access entry properties */}
+    </div>
+  );
+}
+```
+
 ## CLI Commands
 
 Sync your blocks and layouts to Backstage CMS:
@@ -198,6 +251,7 @@ Supported field types for blocks and layouts:
 - `number` - Numeric input
 - `boolean` - Checkbox
 - `select` - Select from predefined options
+- `reference` - Reference to entries from specific blueprints (supports `is_multiple` for multiple selections)
 - `url` - URL input
 - `image` - Single image picker
 - `image_list` - Multiple image picker

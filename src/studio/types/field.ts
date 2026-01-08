@@ -1,4 +1,5 @@
 import { MediaItem } from "../../types";
+import { Entry } from "../../types/entry";
 
 type Nullable<T> = T | null;
 
@@ -13,6 +14,7 @@ export type FieldTypeToValue = {
   menu_select: Nullable<string>;
   number: Nullable<number>;
   press_select: Nullable<string>;
+  reference: Nullable<Entry | Entry[]>;
   repeater: Nullable<any[]>;
   rich_text: Nullable<string>;
   select: Nullable<string>;
@@ -33,14 +35,22 @@ export type BaseField = {
   placeholder?: string;
   required?: boolean;
   options?: Array<{ label: string; value: any }>;
+  allowed_references?: string[];
+  is_multiple?: boolean;
   fields?: Field[];
 };
 
 export type Field = {
-  [K in FieldType]: BaseField & {
-    type: K;
-    value?: FieldTypeToValue[K];
-  };
+  [K in FieldType]: K extends 'reference'
+    ? BaseField & {
+        type: K;
+        value?: FieldTypeToValue[K];
+        is_multiple?: boolean;
+      }
+    : BaseField & {
+        type: K;
+        value?: FieldTypeToValue[K];
+      };
 }[FieldType];
 
 // export interface Field<T extends FieldType = FieldType> {
