@@ -15,6 +15,7 @@ export type FieldTypeToValue = {
   press_select: Nullable<string>;
   repeater: Nullable<any[]>;
   rich_text: Nullable<string>;
+  select: Nullable<string>;
   separator: never;
   spacer: never;
   text: Nullable<string>;

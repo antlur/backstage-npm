@@ -197,6 +197,7 @@ Supported field types for blocks and layouts:
 - `rich_text` - Rich text editor
 - `number` - Numeric input
 - `boolean` - Checkbox
+- `select` - Select from predefined options
 - `url` - URL input
 - `image` - Single image picker
 - `image_list` - Multiple image picker
