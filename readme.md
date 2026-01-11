@@ -7,7 +7,8 @@ A TypeScript client library for [Backstage CMS](https://bckstg.app) with type-sa
 - 🔐 Type-safe API client for Backstage CMS
 - 🧱 Define custom blocks with full TypeScript support
 - 📐 Define custom layouts with schema validation
-- 🔄 CLI tools for syncing blocks and layouts
+- � Define custom blueprints (content types) with field schemas
+- 🔄 CLI tools for syncing blocks, blueprints, and layouts
 - ⚛️ React components for page metadata and structured data
 - 🎨 Framework-agnostic design (works with Next.js, React, etc.)
 
@@ -90,17 +91,38 @@ const heroFields = [
     slug: "title",
     type: "text",
     required: true,
+    placeholder: "Enter hero title...",
   }),
   defineField({
     name: "Subtitle",
     slug: "subtitle",
-    type: "text",
+    type: "textarea",
+    description: "Optional subtitle text",
   }),
   defineField({
     name: "Background Image",
     slug: "backgroundImage",
     type: "image",
     required: true,
+  }),
+  defineField({
+    name: "Display Style",
+    slug: "displayStyle",
+    type: "select",
+    options: [
+      { label: "Full Width", value: "full" },
+      { label: "Centered", value: "centered" },
+      { label: "Left Aligned", value: "left" },
+    ],
+    required: true,
+  }),
+  defineField({
+    name: "Featured Products",
+    slug: "featuredProducts",
+    type: "reference",
+    allowed_references: ["products"],
+    is_multiple: true,
+    description: "Select products to feature",
   }),
 ] as const;
 
@@ -140,6 +162,88 @@ export const heroBlock = defineBlock({
   description: "A hero section with title, subtitle, and background image",
   schema,
   component: Hero,
+});
+```
+
+## Defining Custom Blueprints
+
+Create content types (blueprints) with custom field schemas:
+
+```typescript
+// blueprints/customer.ts
+import { defineBlueprint } from "@antlur/backstage/studio";
+
+export const customerBlueprint = defineBlueprint({
+  name: "Customer",
+  slug: "customers",
+  description: "Customer testimonials and information",
+  fields: [
+    {
+      name: "Name",
+      slug: "name",
+      type: "text",
+      is_primary: true, // Primary field for display
+      required: true,
+      placeholder: "Customer full name",
+    },
+    {
+      name: "Email",
+      slug: "email",
+      type: "email",
+      required: true,
+      placeholder: "customer@example.com",
+    },
+    {
+      name: "Company",
+      slug: "company",
+      type: "text",
+      placeholder: "Company name",
+    },
+    {
+      name: "Photo",
+      slug: "photo",
+      type: "image",
+    },
+    {
+      name: "Testimonial",
+      slug: "testimonial",
+      type: "textarea",
+      required: true,
+      placeholder: "Customer testimonial...",
+    },
+    {
+      name: "Rating",
+      slug: "rating",
+      type: "select",
+      options: [
+        { label: "5 Stars", value: 5 },
+        { label: "4 Stars", value: 4 },
+        { label: "3 Stars", value: 3 },
+        { label: "2 Stars", value: 2 },
+        { label: "1 Star", value: 1 },
+      ],
+      required: true,
+    },
+    {
+      name: "Show in Testimonials",
+      slug: "showInTestimonials",
+      type: "boolean",
+      show_in_list: true, // Show in admin list view
+    },
+  ],
+});
+```
+
+Add blueprints to your config:
+
+```typescript
+import { defineConfig } from "@antlur/backstage";
+import { customerBlueprint } from "./blueprints/customer";
+
+export default defineConfig({
+  accountId: process.env.BACKSTAGE_ACCOUNT_ID,
+  token: process.env.BACKSTAGE_API_KEY,
+  blueprints: [customerBlueprint],
 });
 ```
 
@@ -196,13 +300,39 @@ export default function Testimonials({ block }: BlockComponentProps<typeof schem
 }
 ```
 
+## Field Options
+
+When defining fields for blocks and blueprints, you can set various options to customize their behavior:
+
+### Common Field Options
+
+- `name` (required): Display name for the field
+- `slug` (required): Unique identifier for the field
+- `type` (required): Field type (see supported types below)
+- `description`: Help text shown to content editors
+- `placeholder`: Placeholder text shown in input fields
+- `required`: Whether the field is required
+- `options`: For select fields, array of `{ label: string, value: any }` options
+- `allowed_references`: For reference fields, array of blueprint slugs to reference
+- `is_multiple`: For reference fields, allow multiple selections
+
+### Blueprint-Specific Options
+
+- `is_primary`: Mark as the primary field (used for display in lists)
+- `show_in_list`: Show this field in admin list views
+- `order`: Display order in forms (number)
+- `type_id`: For fieldset references, the ID of the fieldset
+
 ## CLI Commands
 
-Sync your blocks and layouts to Backstage CMS:
+Sync your blocks, blueprints, and layouts to Backstage CMS:
 
 ```bash
 # Sync blocks only
 npx backstage sync blocks
+
+# Sync blueprints only
+npx backstage sync blueprints
 
 # Sync layouts only
 npx backstage sync layouts
@@ -230,6 +360,7 @@ The client provides the following services:
 
 - `client.pages` - Page management
 - `client.blocks` - Block management
+- `client.blueprints` - Blueprint (content type) management
 - `client.layouts` - Layout management
 - `client.locations` - Location management
 - `client.events` - Event management
@@ -243,26 +374,35 @@ The client provides the following services:
 
 ## Field Types
 
-Supported field types for blocks and layouts:
+Supported field types for blocks, blueprints, and layouts:
 
 - `text` - Single-line text input
 - `textarea` - Multi-line text input
 - `rich_text` - Rich text editor
+- `markdown` - Markdown editor
 - `number` - Numeric input
 - `boolean` - Checkbox
 - `select` - Select from predefined options
 - `reference` - Reference to entries from specific blueprints (supports `is_multiple` for multiple selections)
 - `url` - URL input
+- `email` - Email input
+- `slug` - URL slug input
+- `date` - Date picker
+- `time` - Time picker
+- `datetime` - Date and time picker
+- `location` - Location picker
 - `image` - Single image picker
 - `image_list` - Multiple image picker
 - `media` - Media item picker
 - `list_array` - Array of strings
 - `repeater` - Repeatable field group
+- `fieldset` - Grouped fields
 - `event_select` - Event selector
 - `menu_select` - Menu selector
 - `form_select` - Form selector
 - `press_select` - Press release selector
 - `navigation_select` - Navigation selector
+- `page_select` - Page selector
 
 ## React Components
 

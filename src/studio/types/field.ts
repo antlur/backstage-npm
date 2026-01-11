@@ -5,11 +5,18 @@ type Nullable<T> = T | null;
 
 export type FieldTypeToValue = {
   boolean: Nullable<boolean>;
+  date: Nullable<string>;
+  datetime: Nullable<string>;
+  email: Nullable<string>;
   event_select: Nullable<string>;
+  fieldset: never;
   form_select: Nullable<string>;
   image: Nullable<MediaItem>;
   image_list: Nullable<MediaItem[]>;
+  json: Nullable<any>;
   list_array: Nullable<string[]>;
+  location: Nullable<string>;
+  markdown: Nullable<string>;
   media: Nullable<MediaItem>;
   menu_select: Nullable<string>;
   number: Nullable<number>;
@@ -19,9 +26,11 @@ export type FieldTypeToValue = {
   rich_text: Nullable<string>;
   select: Nullable<string>;
   separator: never;
+  slug: Nullable<string>;
   spacer: never;
   text: Nullable<string>;
   textarea: Nullable<string>;
+  time: Nullable<string>;
   url: Nullable<string>;
   navigation_select: Nullable<string>;
   page_select: Nullable<string>;
@@ -37,6 +46,10 @@ export type BaseField = {
   options?: Array<{ label: string; value: any }>;
   allowed_references?: string[];
   is_multiple?: boolean;
+  is_primary?: boolean;
+  show_in_list?: boolean;
+  order?: number;
+  type_id?: string | null;
   fields?: Field[];
 };
 

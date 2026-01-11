@@ -8,6 +8,7 @@ export { BackstageClient } from "./client.js";
 export * from "./endpoints/alerts.js";
 export * from "./endpoints/auth.js";
 export * from "./endpoints/blocks.js";
+export * from "./endpoints/blueprints.js";
 export * from "./endpoints/entries.js";
 export * from "./endpoints/events.js";
 export * from "./endpoints/forms.js";

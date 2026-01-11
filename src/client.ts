@@ -2,6 +2,7 @@ import { getGlobalConfig, BackstageUserConfig } from "./config.js";
 import { AlertService } from "./endpoints/alerts.js";
 import { AuthService } from "./endpoints/auth.js";
 import { BlocksService } from "./endpoints/blocks.js";
+import { BlueprintsService } from "./endpoints/blueprints.js";
 import { EntryService } from "./endpoints/entries.js";
 import { EventService } from "./endpoints/events.js";
 import { FormService } from "./endpoints/forms.js";
@@ -27,6 +28,7 @@ export class BackstageClient {
   public readonly alerts: AlertService;
   public readonly auth: AuthService;
   public readonly blocks: BlocksService;
+  public readonly blueprints: BlueprintsService;
   public readonly entries: EntryService;
   public readonly events: EventService;
   public readonly forms: FormService;
@@ -69,6 +71,7 @@ export class BackstageClient {
     this.alerts = new AlertService(this);
     this.auth = new AuthService(this);
     this.blocks = new BlocksService(this);
+    this.blueprints = new BlueprintsService(this);
     this.entries = new EntryService(this);
     this.events = new EventService(this);
     this.forms = new FormService(this);

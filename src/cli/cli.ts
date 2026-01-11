@@ -5,6 +5,7 @@ import { resolve } from "path";
 import { program } from "commander";
 import { loadBackstageConfig } from "./load-config.js";
 import { syncBlocks } from "./actions/sync-blocks.js";
+import { syncBlueprints } from "./actions/sync-blueprints.js";
 import { syncLayouts } from "./actions/sync-layouts.js";
 
 config({ path: resolve(process.cwd(), ".env") });
@@ -16,7 +17,7 @@ program
 
 program
   .command("sync <type>")
-  .description("Sync blocks and layouts with the Backstage CMS")
+  .description("Sync blocks, blueprints, and layouts with the Backstage CMS")
   .action(async (type) => {
     const backstageConfig = await loadBackstageConfig();
 
@@ -30,6 +31,11 @@ program
       return;
     }
 
+    if (type === "blueprints") {
+      await syncBlueprints(backstageConfig);
+      return;
+    }
+
     if (type === "layouts") {
       await syncLayouts(backstageConfig);
       return;
@@ -37,11 +43,12 @@ program
 
     if (type === "all") {
       await syncBlocks(backstageConfig);
+      await syncBlueprints(backstageConfig);
       await syncLayouts(backstageConfig);
       return;
     }
 
-    console.error(`Unknown type: ${type}. Valid types are: blocks, layouts, all`);
+    console.error(`Unknown type: ${type}. Valid types are: blocks, blueprints, layouts, all`);
     process.exit(1);
   });
 
