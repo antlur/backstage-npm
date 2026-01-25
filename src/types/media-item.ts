@@ -1,5 +1,5 @@
 export interface MediaItem {
-  id: string;
+  id: number | string;
   uuid: string;
   name: string;
   file_name: string;

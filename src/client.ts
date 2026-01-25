@@ -10,6 +10,7 @@ import { InstagramService } from "./endpoints/instagram.js";
 import { LayoutService } from "./endpoints/layouts.js";
 import { LocationService } from "./endpoints/locations.js";
 import { MenuService } from "./endpoints/menus.js";
+import { MenuItemService } from "./endpoints/menu-items.js";
 import { NavigationService } from "./endpoints/navigation.js";
 import { PageService } from "./endpoints/pages.js";
 import { PressService } from "./endpoints/press.js";
@@ -37,6 +38,7 @@ export class BackstageClient {
   public readonly locations: LocationService;
   public readonly media: MediaService;
   public readonly menus: MenuService;
+  public readonly menuItems: MenuItemService;
   public readonly navigation: NavigationService;
   public readonly pages: PageService;
   public readonly press: PressService;
@@ -80,6 +82,7 @@ export class BackstageClient {
     this.locations = new LocationService(this);
     this.media = new MediaService(this);
     this.menus = new MenuService(this);
+    this.menuItems = new MenuItemService(this);
     this.navigation = new NavigationService(this);
     this.pages = new PageService(this);
     this.press = new PressService(this);
@@ -94,8 +97,13 @@ export class BackstageClient {
       Authorization: `Bearer ${this.token}`,
       "X-Account-ID": this.accountId,
       Accept: "application/json",
-      "Content-Type": "application/json",
     };
+
+    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+
+    if (!isFormData) {
+      defaultHeaders["Content-Type"] = "application/json";
+    }
 
     const fetchOptions: RequestInit = {
       method,
@@ -104,7 +112,7 @@ export class BackstageClient {
     };
 
     if (data && !fetchOptions.body && (method === "POST" || method === "PUT" || method === "PATCH")) {
-      fetchOptions.body = JSON.stringify(data);
+      fetchOptions.body = isFormData ? (data as BodyInit) : JSON.stringify(data);
     }
 
     try {

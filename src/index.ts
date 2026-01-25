@@ -17,6 +17,7 @@ export * from "./endpoints/layouts.js";
 export * from "./endpoints/locations.js";
 export * from "./endpoints/media.js";
 export * from "./endpoints/menus.js";
+export * from "./endpoints/menu-items.js";
 export * from "./endpoints/navigation.js";
 export * from "./endpoints/pages.js";
 export * from "./endpoints/press.js";

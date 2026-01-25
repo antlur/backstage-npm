@@ -25,7 +25,30 @@ export interface CreateBlueprintParams {
   }>;
 }
 
-export interface UpdateBlueprintParams extends Partial<CreateBlueprintParams> {}
+export interface UpdateBlueprintParams {
+  name: string;
+  slug: string;
+  slug_single?: string;
+  description?: string;
+  is_routable?: boolean;
+  has_location?: boolean;
+  has_route_index?: boolean;
+  fields: Array<{
+    id?: string;
+    name: string;
+    slug: string;
+    type: string;
+    type_id?: string | null;
+    repeater_type?: string | null;
+    is_primary?: boolean;
+    is_multiple?: boolean;
+    show_in_list?: boolean;
+    order: number;
+    allowed_references?: string[];
+    options?: Array<{ label: string; value: any }>;
+    placeholder?: string;
+  }>;
+}
 
 export class BlueprintsService extends BaseService {
   async list(options?: RequestInit): Promise<Blueprint[]> {

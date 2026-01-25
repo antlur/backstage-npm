@@ -5,11 +5,11 @@ export interface Press {
   slug: string;
   title: string;
   source: string;
-  url: string;
+  url: string | null;
   published_at: string;
   featured_media?: MediaItem;
-  excerpt: string;
-  content: string;
+  excerpt: string | null;
+  content: string | null;
   is_featured: boolean;
   locations: Array<{
     id: string;
