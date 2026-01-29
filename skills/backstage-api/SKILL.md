@@ -195,7 +195,7 @@ await client.blueprints.deleteBlueprint(blueprintId);
 
 ### Locations (Restaurant/Hospitality Venues)
 
-For managing physical restaurant, bar, and hospitality venue locations:
+Use locations to represent restaurant, bar, and hospitality venues. Locations support rich operational details like hours, special hours, and ordering/reservation links.
 
 ```typescript
 // Get all locations
@@ -216,18 +216,31 @@ const newLocation = await client.locations.createLocation({
   zip: "12345",
   slug: "downtown-cafe",
   phone: "+1-555-0100",
-  hours: "9AM-10PM",
-  is_default: false,
-  website: "https://cafe.example.com",
+  timezone: "America/Los_Angeles",
+  hours: [
+    { day: "monday", open: "09:00", close: "22:00" },
+    { day: "tuesday", open: "09:00", close: "22:00" }
+  ],
+  special_hours: [
+    { date: "2026-12-25", closed: true, label: "Christmas" }
+  ],
+  reservation_links: [
+    { label: "OpenTable", url: "https://opentable.example.com" }
+  ],
+  ordering_links: [
+    { label: "Online Ordering", url: "https://order.example.com" }
+  ],
   latitude: 40.7128,
-  longitude: -74.0060
+  longitude: -74.0060,
+  custom_fields: { neighborhood: "Downtown" }
 });
 
 // Update location
 await client.locations.updateLocation(locationId, {
   name: "Updated Cafe Name",
-  hours: "9AM-11PM",
-  phone: "+1-555-0101"
+  phone: "+1-555-0101",
+  description: "Cozy neighborhood cafe",
+  map_link: "https://maps.google.com/?q=123+Main+St"
 });
 
 // Delete location
@@ -271,16 +284,16 @@ await client.events.deleteEvent(eventId);
 
 ### Menus (Restaurant/Food Menus)
 
-For managing restaurant, bar, or hospitality food/drink menus:
+Menus represent restaurant, bar, or hospitality menus. Fetching a menu by ID or slug includes categories and items.
 
 ```typescript
 // Get all menus
 const menus = await client.menus.getMenus();
 
-// Get menu by ID
+// Get menu by ID (includes categories and items)
 const menu = await client.menus.getMenu(menuId);
 
-// Get menu by slug
+// Get menu by slug (includes categories and items)
 const diningMenu = await client.menus.getMenuBySlug("dinner-menu");
 
 // Create menu (e.g., breakfast, lunch, dinner, drinks, desserts)
@@ -293,7 +306,8 @@ const newMenu = await client.menus.createMenu({
 
 // Update menu
 await client.menus.updateMenu(menuId, {
-  title: "Updated Menu Name"
+  title: "Updated Menu Name",
+  subtitle: "Seasonal favorites"
 });
 
 // Delete menu
@@ -302,37 +316,47 @@ await client.menus.deleteMenu(menuId);
 
 ### Menu Items (Food/Drink Items)
 
-For managing individual dishes, drinks, and food items within menus:
+Menu items represent individual dishes, drinks, or menu entries for restaurants and bars.
 
 ```typescript
-// Get all menu items
-const menuItems = await client.menuItems.getMenuItems();
+// List all menu items
+const menuItems = await client.menuItems.list();
 
 // Get menu item by ID
-const menuItem = await client.menuItems.getMenuItem(menuItemId);
+const menuItem = await client.menuItems.get(menuItemId);
 
 // Create menu item (e.g., dish or drink)
-const newMenuItem = await client.menuItems.createMenuItem({
-  menu_id: "menu-id",
-  label: "Grilled Salmon",
-  url: "", // May contain item details or description URL
-  order: 1,
-  parent_id: null, // null for top-level items
-  price: 24.99,
+const newMenuItem = await client.menuItems.create({
+  title: "Grilled Salmon",
+  subtitle: "Seasonal vegetables",
   description: "Fresh Atlantic salmon with lemon butter sauce",
-  dietary_flags: ["gluten-free", "high-protein"],
-  ingredients: ["salmon", "butter", "lemon", "herbs"]
+  price: "24.99",
+  price_type: "usd",
+  has_multiple_prices: false,
+  has_hidden_price: false,
+  dietary_tags: ["gluten-free"],
+  image_id: 123
+});
+
+// Create menu item with multiple prices
+const multiPriceItem = await client.menuItems.create({
+  title: "House Wine",
+  prices: [
+    { label: "Glass", price: "9" },
+    { label: "Bottle", price: "32" }
+  ],
+  has_multiple_prices: true
 });
 
 // Update menu item
-await client.menuItems.updateMenuItem(menuItemId, {
-  label: "Pan-Seared Salmon",
-  price: 26.99,
+await client.menuItems.update(menuItemId, {
+  title: "Pan-Seared Salmon",
+  price: "26.99",
   description: "Updated preparation method"
 });
 
 // Delete menu item
-await client.menuItems.deleteMenuItem(menuItemId);
+await client.menuItems.delete(menuItemId);
 ```
 
 ### Blocks (Reusable Components)
@@ -527,11 +551,38 @@ const routes = await client.websites.getRoutes(websiteId);
 ### Navigations
 
 ```typescript
-// Get all navigations
-const navigations = await client.navigations.getNavigations();
+// List navigations (shallow)
+const navigations = await client.navigations.list();
 
-// Get navigation by ID
-const navigation = await client.navigations.getNavigation(navigationId);
+// Get navigation by ID (raw)
+const navigation = await client.navigations.getById(navigationId);
+
+// Get navigation with tree-structured items
+const navigationTree = await client.navigations.getNavigation(navigationId);
+
+// Create navigation
+const newNavigation = await client.navigations.createNavigation({
+  name: "Main Navigation",
+  items: [
+    { title: "Home", url: "/", parent_id: null },
+    { title: "Menu", url: "/menu", parent_id: null },
+    { title: "Dinner", url: "/menu/dinner", parent_id: null }
+  ]
+});
+
+// Update navigation
+const updatedNavigation = await client.navigations.updateNavigation(navigationId, {
+  name: "Primary Navigation",
+  items: [
+    { title: "Reservations", url: "/reservations", parent_id: null }
+  ]
+});
+
+// Get all navigations with full items
+const fullNavigations = await client.navigations.getNavigations();
+
+// Get default navigation (first in list)
+const defaultNavigation = await client.navigations.getDefaultNavigation();
 ```
 
 ### Routes & URL Resolution

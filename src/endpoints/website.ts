@@ -19,6 +19,15 @@ export class WebsiteService extends BaseService {
     return data;
   }
 
+  async getWebsiteById(id: string, options?: RequestInit): Promise<Website | null> {
+    try {
+      const { data } = await this.client.get<ApiSingleResponse<Website>>(`/websites/${id}`, options);
+      return data;
+    } catch (error) {
+      return null;
+    }
+  }
+
   async getWebsite(options?: RequestInit): Promise<Website> {
     // Handle case where id might be an object (e.g., RequestInit passed as first param)
     // if (id && typeof id === "string") {
@@ -39,9 +48,12 @@ export class WebsiteService extends BaseService {
     return data;
   }
 
+  async getWebsiteRoutes(websiteId: string, options?: RequestInit): Promise<string[]> {
+    return this.client.get<string[]>(`/websites/${websiteId}/routes`, options);
+  }
+
   async routes(options?: RequestInit): Promise<string[]> {
-    // const id = websiteId || (await this.getWebsite()).id;
-    const website = await this.getWebsite();
-    return this.client.get<string[]>(`/websites/${website.id}/routes`, options);
+    const website = await this.getWebsite(options);
+    return this.getWebsiteRoutes(website.id, options);
   }
 }

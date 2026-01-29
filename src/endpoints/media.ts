@@ -20,7 +20,7 @@ export class MediaService extends BaseService {
     const { data } = await this.client.post<ApiSingleResponse<Media>>(
       "/media",
       { source_url, name: options?.name, alt: options?.alt },
-      options
+      options,
     );
     return data;
   }
@@ -38,6 +38,25 @@ export class MediaService extends BaseService {
     }
 
     const { data } = await this.client.post<ApiSingleResponse<Media>>("/media", formData, options?.request);
+    return data;
+  }
+
+  async uploadToMediaEndpoint(
+    file: Blob,
+    options?: { name?: string; alt?: string; request?: RequestInit },
+  ): Promise<Media> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    if (options?.name) {
+      formData.append("name", options.name);
+    }
+
+    if (options?.alt) {
+      formData.append("alt", options.alt);
+    }
+
+    const { data } = await this.client.post<ApiSingleResponse<Media>>("/media/upload", formData, options?.request);
     return data;
   }
 
