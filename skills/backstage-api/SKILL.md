@@ -1,5 +1,5 @@
 ---
-name: backstage-cms-data-management
+name: backstage-api
 description: Comprehensive guide for using the @antlur/backstage SDK to manage all aspects of a Backstage account, including CRUD operations on entries, blocks, layouts, blueprints, pages, locations, menus, media, events, press, websites, routes, forms, and more. Use this skill when working with Backstage CMS API, managing account resources, defining custom components, or syncing content.
 metadata:
   short-description: Expert guidance for complete Backstage account management using the @antlur/backstage SDK
