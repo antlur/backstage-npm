@@ -35,6 +35,7 @@ export interface Location {
     date: string;
     openTime: string;
     closeTime: string;
+    title?: string | null;
     open24Hours: boolean;
     closed24Hours: boolean;
     notes: string;

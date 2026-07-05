@@ -1,16 +1,20 @@
 import type { Location } from "../types";
 import { DateTime } from "luxon";
 
-export function getSpecialHoursFromLocation(location: Location): any[] {
+export function getSpecialHoursFromLocation(location: Location, noticeDays?: number): any[] {
   if (!location.special_hours) return [];
 
-  // filter out any special hours that are before today
-  const now = DateTime.now().startOf("day");
-  if (location.timezone) now.setZone(location.timezone);
+  const now = (location.timezone ? DateTime.now().setZone(location.timezone) : DateTime.now()).startOf("day");
+  const lastVisibleDate = typeof noticeDays === "number" ? now.plus({ days: Math.max(0, noticeDays) }) : null;
 
   const specialHours = location.special_hours.filter((specialHour) => {
-    const specialHourDate = DateTime.fromISO(specialHour.date);
-    return specialHourDate >= now;
+    const specialHourDate = DateTime.fromISO(specialHour.date, { zone: location.timezone || undefined }).startOf("day");
+
+    if (specialHourDate < now) {
+      return false;
+    }
+
+    return lastVisibleDate ? specialHourDate <= lastVisibleDate : true;
   });
 
   // sort by date

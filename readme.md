@@ -8,6 +8,7 @@ A TypeScript client library for [Backstage CMS](https://bckstg.app) with type-sa
 - 🧱 Define custom blocks with full TypeScript support
 - 📐 Define custom layouts with schema validation
 - � Define custom blueprints (content types) with field schemas
+- 🧩 Inspect account modules such as Site Builder, Custom Blocks, Events, and Press
 - 🔄 CLI tools for syncing blocks, blueprints, and layouts
 - ⚛️ React components for page metadata and structured data
 - 🎨 Framework-agnostic design (works with Next.js, React, etc.)
@@ -75,6 +76,9 @@ const event = await client.events.getEventBySlug("summer-festival");
 
 // Fetch menus
 const menu = await client.menus.getMenu("main-menu");
+
+// Check account modules before using premium authoring APIs
+const customBlocksEnabled = await client.modules.isEnabled("cms.custom_blocks");
 ```
 
 ## Defining Custom Blocks
@@ -161,9 +165,19 @@ export const heroBlock = defineBlock({
   slug: "hero",
   description: "A hero section with title, subtitle, and background image",
   schema,
+  // Optional: map this custom block onto a Frontstage renderer.
+  // Requires the account's Custom Blocks module in Backstage.
+  frontstage: {
+    enabled: true,
+    type: "hero",
+    defaultVariant: "full-bleed-image",
+    variants: ["full-bleed-image"],
+  },
   component: Hero,
 });
 ```
+
+Custom block and custom layout authoring are advanced Backstage modules. The SDK can sync them when the account has `cms.custom_blocks` or `cms.custom_layouts` enabled; standard templated Frontstage sites can still use system-defined blocks and layouts without those modules.
 
 ## Defining Custom Blueprints
 

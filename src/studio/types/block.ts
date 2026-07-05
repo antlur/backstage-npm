@@ -1,5 +1,6 @@
 import { Field, FieldType, FieldTypeToValue } from "./field";
 import { Entry } from "../../types/entry";
+import type { FrontstageStandardBlockType, FrontstageStandardBlockVariant } from "../../types/frontstage";
 
 type Nullable<T> = T | null;
 
@@ -28,11 +29,20 @@ export interface BlockDefinition<TFields extends readonly Field[]> {
   slug: string;
   description?: string;
   schema: BlockSchema<TFields>;
+  frontstage?: BlockFrontstageConfig;
   component: BlockComponent<BlockSchema<TFields>>;
 }
 
 export interface BlockProperties {
   customClassName?: string;
+}
+
+export interface BlockFrontstageConfig {
+  enabled?: boolean;
+  type?: FrontstageStandardBlockType | string;
+  defaultVariant?: FrontstageStandardBlockVariant | string;
+  variants?: Array<FrontstageStandardBlockVariant | string>;
+  category?: string;
 }
 
 export interface BuilderBlock<TSchema extends BlockSchema<readonly Field[]>> {

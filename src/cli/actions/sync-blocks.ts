@@ -15,6 +15,7 @@ export async function syncBlocks(config: BackstageUserConfig) {
       slug: block.slug,
       description: block?.description,
       schema: block.schema,
+      frontstage: block.frontstage,
     };
 
     try {

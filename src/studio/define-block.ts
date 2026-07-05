@@ -1,10 +1,12 @@
 import { BlockSchema, BlockDefinition, BlockComponent, Field } from "./types";
+import type { BlockFrontstageConfig } from "./types/block";
 
 export function defineBlock<TFields extends readonly Field[]>(options: {
   name: string;
   slug: string;
   description?: string;
   schema: BlockSchema<TFields>;
+  frontstage?: BlockFrontstageConfig;
   component: BlockComponent<BlockSchema<TFields>>;
 }): BlockDefinition<TFields> {
   // Runtime validation

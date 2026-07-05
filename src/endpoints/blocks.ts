@@ -1,18 +1,20 @@
-import type { ApiCollectionResponse, ApiSingleResponse, AccountBlock } from "../types/index";
+import type { AccountBlock, AccountBlockFrontstageConfig, AccountBlockSchema, ApiCollectionResponse, ApiSingleResponse } from "../types/index";
 import { BaseService } from "./base.js";
 
 export interface CreateBlockParams {
   name: string;
   slug: string;
-  schema: any;
+  schema: AccountBlockSchema;
   description?: string;
+  frontstage?: AccountBlockFrontstageConfig | null;
 }
 
 export interface UpdateBlockParams {
   name?: string;
   slug?: string;
-  schema?: any;
+  schema?: AccountBlockSchema;
   description?: string;
+  frontstage?: AccountBlockFrontstageConfig | null;
 }
 
 export class BlocksService extends BaseService {

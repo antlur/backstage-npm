@@ -1,16 +1,18 @@
-import type { ApiCollectionResponse, ApiSingleResponse, AccountLayout } from "../types/index";
+import type { AccountLayout, AccountLayoutSchema, AccountLayoutValues, ApiCollectionResponse, ApiSingleResponse } from "../types/index";
 import { BaseService } from "./base.js";
 
 export interface CreateLayoutParams {
   name: string;
   slug: string;
-  schema: any;
+  schema: AccountLayoutSchema;
+  values?: AccountLayoutValues;
 }
 
 export interface UpdateLayoutParams {
   name?: string;
   slug?: string;
-  schema?: any;
+  schema?: AccountLayoutSchema;
+  values?: AccountLayoutValues;
 }
 
 export class LayoutService extends BaseService {
