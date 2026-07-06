@@ -100,7 +100,66 @@ export interface FrontstageMenuSectionBlockProps {
   categories?: FrontstageMenuSectionCategory[];
 }
 
-export type FrontstageKnownBlock = FrontstageBlock<FrontstageMenuSectionBlockProps> & { type: "menu-section" };
+export interface FrontstageAction {
+  label: string;
+  href: string;
+  variant?: "primary" | "secondary" | "link";
+}
+
+export interface FrontstageVideo {
+  url: string;
+  poster?: FrontstageImage;
+  title?: string;
+}
+
+export interface FrontstageHeroBlockProps {
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  subheading?: string;
+  image?: FrontstageImage;
+  media?: FrontstageImage;
+  images?: FrontstageImage[];
+  video?: FrontstageVideo;
+  actions?: FrontstageAction[];
+  primaryCtaLabel?: string;
+  primaryCtaUrl?: string;
+}
+
+export interface FrontstageFormField {
+  id?: string;
+  name: string;
+  label: string;
+  type?: "text" | "email" | "tel" | "textarea" | "date" | "number" | "select" | "checkbox" | "radio" | "file" | "url";
+  required?: boolean;
+  options?: Array<string | { label?: string; value?: string }>;
+}
+
+export interface FrontstageForm {
+  id: string;
+  title?: string;
+  action: string;
+  redirectUrl?: string | null;
+  recaptchaSiteKey?: string | null;
+  fields?: FrontstageFormField[];
+}
+
+export interface FrontstageContactFormBlockProps {
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  formId?: string;
+  form?: FrontstageForm;
+  action?: string;
+  submitLabel?: string;
+  fields?: FrontstageFormField[];
+  disclaimer?: string;
+}
+
+export type FrontstageKnownBlock =
+  | (FrontstageBlock<FrontstageMenuSectionBlockProps> & { type: "menu-section" })
+  | (FrontstageBlock<FrontstageHeroBlockProps> & { type: "hero" })
+  | (FrontstageBlock<FrontstageContactFormBlockProps> & { type: "contact-form" });
 
 export type FrontstageStandardBlockType =
   | "hero"
