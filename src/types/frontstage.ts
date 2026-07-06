@@ -130,7 +130,7 @@ export interface FrontstageFormField {
   id?: string;
   name: string;
   label: string;
-  type?: "text" | "email" | "tel" | "textarea" | "date" | "number" | "select" | "checkbox" | "radio" | "file" | "url";
+  type?: "text" | "email" | "tel" | "phone" | "textarea" | "date" | "number" | "select" | "checkbox" | "radio" | "file" | "url";
   required?: boolean;
   options?: Array<string | { label?: string; value?: string }>;
 }
