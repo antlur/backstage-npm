@@ -100,6 +100,24 @@ export interface FrontstageMenuSectionBlockProps {
   categories?: FrontstageMenuSectionCategory[];
 }
 
+export interface FrontstageMenuSpecialsBlockProps {
+  eyebrow?: string;
+  heading: string;
+  body?: string;
+  items?: Array<{
+    name: string;
+    description?: string;
+    price?: string;
+    badge?: string;
+    image?: FrontstageImage;
+    dietaryTags?: FrontstageLabelValue[];
+    action?: FrontstageAction;
+    label?: string;
+    href?: string;
+    variant?: FrontstageAction["variant"];
+  }>;
+}
+
 export interface FrontstageAction {
   label: string;
   href: string;
@@ -161,6 +179,7 @@ export interface FrontstageContactFormBlockProps {
 
 export type FrontstageKnownBlock =
   | (FrontstageBlock<FrontstageMenuSectionBlockProps> & { type: "menu-section" })
+  | (FrontstageBlock<FrontstageMenuSpecialsBlockProps> & { type: "menu-specials" })
   | (FrontstageBlock<FrontstageHeroBlockProps> & { type: "hero" })
   | (FrontstageBlock<FrontstageContactFormBlockProps> & { type: "contact-form" });
 
@@ -171,6 +190,7 @@ export type FrontstageStandardBlockType =
   | "gallery"
   | "media-feature"
   | "menu-preview"
+  | "menu-specials"
   | "menu-section"
   | "locations"
   | "hours"
@@ -197,6 +217,10 @@ export type FrontstageStandardBlockVariant =
   | "carousel"
   | "editorial-strip"
   | "mixed-media"
+  | "featured"
+  | "grid"
+  | "compact-list"
+  | "contained"
   | "full-width"
   | "inline";
 
