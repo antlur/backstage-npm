@@ -121,6 +121,9 @@ export interface FrontstageHeroBlockProps {
   media?: FrontstageImage;
   images?: FrontstageImage[];
   video?: FrontstageVideo;
+  videoUrl?: string;
+  videoPoster?: FrontstageImage;
+  videoTitle?: string;
   actions?: FrontstageAction[];
   primaryCtaLabel?: string;
   primaryCtaUrl?: string;
