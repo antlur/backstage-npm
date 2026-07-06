@@ -49,6 +49,13 @@ export interface ThemeColors {
   footerLocationForeground: string;
   footer?: string;
   footerForeground: string;
+  menuBackground?: string;
+  menuForeground: string;
+  menuBorder: string;
+  menuAccent: string;
+  menuAccentForeground: string;
+  menuSelector: string;
+  menuSelectorForeground: string;
 }
 
 export interface Theme {

@@ -109,6 +109,19 @@ export interface FrontstageTheme {
     accentForeground?: string;
     topbar?: string;
     topbarForeground?: string;
+    header?: string;
+    headerForeground?: string;
+    footer?: string;
+    footerForeground?: string;
+    footerLocation?: string;
+    footerLocationForeground?: string;
+    menuBackground?: string;
+    menuForeground?: string;
+    menuBorder?: string;
+    menuAccent?: string;
+    menuAccentForeground?: string;
+    menuSelector?: string;
+    menuSelectorForeground?: string;
   };
   fonts: {
     heading: FrontstageFont;
