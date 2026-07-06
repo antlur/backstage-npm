@@ -57,6 +57,51 @@ export interface FrontstageBlock<TProps = Record<string, unknown>> {
   props: TProps;
 }
 
+export type FrontstageLabelValue = string | { label: string };
+
+export interface FrontstageMenuSectionItem {
+  name: string;
+  subtitle?: string;
+  postTitle?: string;
+  description?: string;
+  price?: string;
+  serves?: string;
+  image?: FrontstageImage;
+  dietaryTags?: FrontstageLabelValue[];
+  prices?: Array<{
+    label?: string;
+    value: string;
+  }>;
+}
+
+export interface FrontstageMenuSectionCategory {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  afterDescription?: string;
+  serves?: string;
+  columnCount?: number | string;
+  pricingColumns?: FrontstageLabelValue[];
+  items?: FrontstageMenuSectionItem[];
+}
+
+export interface FrontstageMenuSectionBlockProps {
+  eyebrow?: string;
+  heading: string;
+  body?: string;
+  menus?: Array<{
+    label: string;
+    href: string;
+    current?: boolean | string;
+  }>;
+  pdfUrl?: string;
+  pdfLabel?: string;
+  items?: FrontstageMenuSectionItem[];
+  categories?: FrontstageMenuSectionCategory[];
+}
+
+export type FrontstageKnownBlock = FrontstageBlock<FrontstageMenuSectionBlockProps> & { type: "menu-section" };
+
 export type FrontstageStandardBlockType =
   | "hero"
   | "content"
