@@ -108,13 +108,7 @@ export interface FrontstageMenuSpecialsBlockProps {
     name: string;
     description?: string;
     price?: string;
-    badge?: string;
     image?: FrontstageImage;
-    dietaryTags?: FrontstageLabelValue[];
-    action?: FrontstageAction;
-    label?: string;
-    href?: string;
-    variant?: FrontstageAction["variant"];
   }>;
 }
 
