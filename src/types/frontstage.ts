@@ -189,7 +189,6 @@ export type FrontstageStandardBlockType =
   | "feature-grid"
   | "gallery"
   | "media-feature"
-  | "menu-preview"
   | "menu-specials"
   | "menu-section"
   | "locations"
