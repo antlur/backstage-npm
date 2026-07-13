@@ -6,7 +6,7 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationMap": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "target": "ESNext",
     "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
