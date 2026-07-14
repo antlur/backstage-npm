@@ -14,6 +14,7 @@ export interface FrontstageNavItem {
 }
 
 export type FrontstageThemePreset = "classic-restaurant" | "premium-hospitality" | "fast-casual" | (string & {});
+export type FrontstageFooterVisitVariant = "map-rail" | "split-panel" | "map-overlay" | "details-only";
 export type FrontstageAlertType = "banner" | "popup";
 export type FrontstageAlertPosition = "top" | "bottom" | "center" | "bottom-right";
 
@@ -256,6 +257,7 @@ export interface FrontstageTheme {
     container: "narrow" | "default" | "wide" | "full";
     header: "default" | "centered-logo" | "split-nav" | "minimal";
     footer: "simple" | "multi-column" | "location-heavy";
+    footerVisit?: FrontstageFooterVisitVariant;
   };
 }
 
