@@ -1,8 +1,8 @@
-export * from "./types";
+export * from "./types/index.js";
 
-export * from "./define-block";
-export * from "./define-blueprint";
-export * from "./define-field";
-export * from "./define-layout";
-export * from "./define-schema";
-export * from "./utils";
+export * from "./define-block.js";
+export * from "./define-blueprint.js";
+export * from "./define-field.js";
+export * from "./define-layout.js";
+export * from "./define-schema.js";
+export * from "./utils.js";
