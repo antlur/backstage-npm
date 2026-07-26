@@ -14,6 +14,7 @@ export interface FrontstageNavItem {
 }
 
 export type FrontstageThemePreset = "classic-restaurant" | "premium-hospitality" | "fast-casual" | (string & {});
+export type FrontstageFooterVisitVariant = "map-rail" | "split-panel" | "map-overlay" | "details-only";
 export type FrontstageAlertType = "banner" | "popup";
 export type FrontstageAlertPosition = "top" | "bottom" | "center" | "bottom-right";
 
@@ -57,13 +58,133 @@ export interface FrontstageBlock<TProps = Record<string, unknown>> {
   props: TProps;
 }
 
+export type FrontstageLabelValue = string | { label: string };
+
+export interface FrontstageMenuSectionItem {
+  name: string;
+  subtitle?: string;
+  postTitle?: string;
+  description?: string;
+  price?: string;
+  serves?: string;
+  image?: FrontstageImage;
+  dietaryTags?: FrontstageLabelValue[];
+  prices?: Array<{
+    label?: string;
+    value: string;
+  }>;
+}
+
+export interface FrontstageMenuSectionCategory {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  afterDescription?: string;
+  serves?: string;
+  columnCount?: number | string;
+  pricingColumns?: FrontstageLabelValue[];
+  items?: FrontstageMenuSectionItem[];
+}
+
+export interface FrontstageMenuSectionBlockProps {
+  eyebrow?: string;
+  heading: string;
+  body?: string;
+  menus?: Array<{
+    label: string;
+    href: string;
+    current?: boolean | string;
+  }>;
+  pdfUrl?: string;
+  pdfLabel?: string;
+  items?: FrontstageMenuSectionItem[];
+  categories?: FrontstageMenuSectionCategory[];
+}
+
+export interface FrontstageMenuSpecialsBlockProps {
+  eyebrow?: string;
+  heading: string;
+  body?: string;
+  items?: Array<{
+    name: string;
+    description?: string;
+    price?: string;
+    image?: FrontstageImage;
+  }>;
+}
+
+export interface FrontstageAction {
+  label: string;
+  href: string;
+  variant?: "primary" | "secondary" | "link";
+}
+
+export interface FrontstageVideo {
+  url: string;
+  poster?: FrontstageImage;
+  title?: string;
+}
+
+export interface FrontstageHeroBlockProps {
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  subheading?: string;
+  image?: FrontstageImage;
+  media?: FrontstageImage;
+  images?: FrontstageImage[];
+  video?: FrontstageVideo;
+  videoUrl?: string;
+  videoPoster?: FrontstageImage;
+  videoTitle?: string;
+  actions?: FrontstageAction[];
+  primaryCtaLabel?: string;
+  primaryCtaUrl?: string;
+}
+
+export interface FrontstageFormField {
+  id?: string;
+  name: string;
+  label: string;
+  type?: "text" | "email" | "tel" | "phone" | "textarea" | "date" | "number" | "select" | "checkbox" | "radio" | "file" | "url";
+  required?: boolean;
+  options?: Array<string | { label?: string; value?: string }>;
+}
+
+export interface FrontstageForm {
+  id: string;
+  title?: string;
+  action: string;
+  redirectUrl?: string | null;
+  recaptchaSiteKey?: string | null;
+  fields?: FrontstageFormField[];
+}
+
+export interface FrontstageContactFormBlockProps {
+  eyebrow?: string;
+  heading?: string;
+  body?: string;
+  formId?: string;
+  form?: FrontstageForm;
+  action?: string;
+  submitLabel?: string;
+  fields?: FrontstageFormField[];
+  disclaimer?: string;
+}
+
+export type FrontstageKnownBlock =
+  | (FrontstageBlock<FrontstageMenuSectionBlockProps> & { type: "menu-section" })
+  | (FrontstageBlock<FrontstageMenuSpecialsBlockProps> & { type: "menu-specials" })
+  | (FrontstageBlock<FrontstageHeroBlockProps> & { type: "hero" })
+  | (FrontstageBlock<FrontstageContactFormBlockProps> & { type: "contact-form" });
+
 export type FrontstageStandardBlockType =
   | "hero"
   | "content"
   | "feature-grid"
   | "gallery"
   | "media-feature"
-  | "menu-preview"
+  | "menu-specials"
   | "menu-section"
   | "locations"
   | "hours"
@@ -90,6 +211,10 @@ export type FrontstageStandardBlockVariant =
   | "carousel"
   | "editorial-strip"
   | "mixed-media"
+  | "featured"
+  | "grid"
+  | "compact-list"
+  | "contained"
   | "full-width"
   | "inline";
 
@@ -109,6 +234,19 @@ export interface FrontstageTheme {
     accentForeground?: string;
     topbar?: string;
     topbarForeground?: string;
+    header?: string;
+    headerForeground?: string;
+    footer?: string;
+    footerForeground?: string;
+    footerLocation?: string;
+    footerLocationForeground?: string;
+    menuBackground?: string;
+    menuForeground?: string;
+    menuBorder?: string;
+    menuAccent?: string;
+    menuAccentForeground?: string;
+    menuSelector?: string;
+    menuSelectorForeground?: string;
   };
   fonts: {
     heading: FrontstageFont;
@@ -119,6 +257,7 @@ export interface FrontstageTheme {
     container: "narrow" | "default" | "wide" | "full";
     header: "default" | "centered-logo" | "split-nav" | "minimal";
     footer: "simple" | "multi-column" | "location-heavy";
+    footerVisit?: FrontstageFooterVisitVariant;
   };
 }
 
