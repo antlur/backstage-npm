@@ -45,10 +45,19 @@ test("FrontstageService uses the root page endpoint for an omitted slug", async 
   assert.deepEqual(requests, ["/frontstage/pages", "/frontstage/pages"]);
 });
 
-test("Frontstage contracts expose rendering modes and structured location data", () => {
-  const modes: Pick<FrontstageSiteResponse["site"], "rendererMode" | "routingMode"> = {
+test("Frontstage contracts expose rendering modes, route settings, and structured location data", () => {
+  const modes: Pick<FrontstageSiteResponse["site"], "rendererMode" | "routingMode" | "routeSettings"> = {
     rendererMode: "frontstage",
-    routingMode: "managed"
+    routingMode: "managed",
+    routeSettings: {
+      locations: "locations",
+      location: "location",
+      menus: "menu",
+      events: "events",
+      press: "press",
+      locationAtRoot: false,
+      nestLocationEntries: true
+    }
   };
   const contact: NonNullable<FrontstageSiteResponse["contact"]> = {
     postalAddress: {
@@ -68,6 +77,7 @@ test("Frontstage contracts expose rendering modes and structured location data",
   };
 
   assert.equal(modes.rendererMode, "frontstage");
+  assert.equal(modes.routeSettings?.nestLocationEntries, true);
   assert.equal(contact.postalAddress?.addressLocality, "Chicago");
   assert.equal(route.source, "module");
 });
