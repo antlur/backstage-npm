@@ -272,6 +272,8 @@ export interface FrontstageSiteResponse {
   site: {
     id: string;
     accountId: string;
+    rendererMode?: "legacy" | "frontstage" | "headless";
+    routingMode?: "managed" | "hybrid" | "application";
     name: string;
     baseUrl: string;
     locale: string;
@@ -286,6 +288,16 @@ export interface FrontstageSiteResponse {
   };
   contact?: {
     address?: string;
+    postalAddress?: {
+      streetAddress?: string;
+      addressLocality?: string;
+      addressRegion?: string;
+      postalCode?: string;
+    };
+    geo?: {
+      latitude: number;
+      longitude: number;
+    };
     mapUrl?: string;
     phone?: string;
     email?: string;
@@ -354,6 +366,7 @@ export interface FrontstageRoute {
   path: string;
   slug?: string;
   type?: string | null;
+  source?: "cms" | "module" | "application" | "override";
   model?: string | null;
   modelId?: string | null;
   title?: string | null;
