@@ -267,6 +267,16 @@ export interface FrontstageFont {
   family: string;
 }
 
+export interface FrontstageRouteSettings {
+  locations: string;
+  location: string;
+  menus: string;
+  events: string;
+  press: string;
+  locationAtRoot: boolean;
+  nestLocationEntries: boolean;
+}
+
 export interface FrontstageSiteResponse {
   contractVersion: FrontstageContractVersion;
   site: {
@@ -274,6 +284,7 @@ export interface FrontstageSiteResponse {
     accountId: string;
     rendererMode?: "legacy" | "frontstage" | "headless";
     routingMode?: "managed" | "hybrid" | "application";
+    routeSettings?: FrontstageRouteSettings;
     name: string;
     baseUrl: string;
     locale: string;
