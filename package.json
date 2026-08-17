@@ -1,7 +1,7 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.15.2",
+  "version": "1.15.3",
   "description": "A simple client for Backstage CMS",
   "license": "MIT",
   "repository": {
@@ -45,7 +45,10 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "npm run clean && tsc",
+    "prepack": "npm run build",
     "prepublishOnly": "npm run build && npm test",
+    "pack:release": "npm test && npm pack --ignore-scripts",
+    "publish:release": "npm test && npm publish --ignore-scripts",
     "dev": "tsc --watch",
     "cli": "jiti src/cli/cli.ts",
     "postbuild": "chmod +x ./dist/cli/cli.js",

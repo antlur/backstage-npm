@@ -2,6 +2,19 @@
 
 A TypeScript client library for [Backstage CMS](https://bckstg.app) with type-safe block and layout definitions.
 
+## Publishing
+
+Use the explicit release command so the package is rebuilt and tested even when
+npm lifecycle scripts are disabled on the publishing machine:
+
+```bash
+npm run publish:release
+```
+
+Use `npm run pack:release` to inspect the exact tarball without publishing it.
+Do not run `npm publish` directly because it can package a stale `dist` directory
+when npm is configured with `ignore-scripts=true`.
+
 ## Features
 
 - 🔐 Type-safe API client for Backstage CMS
