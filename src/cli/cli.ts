@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 
-import { config } from "dotenv";
-import { resolve } from "path";
+// Must be first: ESM evaluates imports in order, and later modules read process.env at load time.
+import "./load-env.js";
+
 import { program } from "commander";
 import { loadBackstageConfig } from "./load-config.js";
 import { syncBlocks } from "./actions/sync-blocks.js";
 import { syncBlueprints } from "./actions/sync-blueprints.js";
 import { syncLayouts } from "./actions/sync-layouts.js";
-
-config({ path: resolve(process.cwd(), ".env") });
 
 program
   .name("backstage")

@@ -35,21 +35,38 @@ export interface BackstageUserConfig {
   onError?: (error: Error) => void;
 }
 
-let globalConfig: BackstageUserConfig = {
-  baseURL: process.env.BACKSTAGE_API_URL ?? DEFAULT_BASE_URL,
-  token: process.env.BACKSTAGE_API_KEY ?? undefined,
-  accountId: process.env.BACKSTAGE_ACCOUNT_ID ?? undefined,
-};
+let userConfig: BackstageUserConfig = {};
+
+function envConfig(): BackstageUserConfig {
+  return {
+    baseURL: process.env.BACKSTAGE_API_URL ?? DEFAULT_BASE_URL,
+    token: process.env.BACKSTAGE_API_KEY ?? undefined,
+    accountId: process.env.BACKSTAGE_ACCOUNT_ID ?? undefined,
+  };
+}
+
+function mergeDefined(base: BackstageUserConfig, overrides: BackstageUserConfig): BackstageUserConfig {
+  const merged: Record<string, unknown> = { ...base };
+
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  }
+
+  return merged as BackstageUserConfig;
+}
 
 export function defineConfig(config: BackstageUserConfig): BackstageUserConfig {
-  globalConfig = {
-    ...globalConfig,
-    ...config,
-  };
-  return globalConfig;
+  userConfig = mergeDefined(userConfig, config);
+  return getGlobalConfig();
 }
 
 export function getGlobalConfig(): BackstageUserConfig {
-  // read the config from the project root
-  return globalConfig;
+  // Env is read lazily so values loaded after this module (e.g. by the CLI's dotenv) still apply.
+  return mergeDefined(envConfig(), userConfig);
+}
+
+export function resolveConfig(config?: BackstageUserConfig): BackstageUserConfig {
+  return config ? mergeDefined(getGlobalConfig(), config) : getGlobalConfig();
 }

@@ -1,4 +1,4 @@
-import { getGlobalConfig, BackstageUserConfig } from "./config.js";
+import { resolveConfig, BackstageUserConfig } from "./config.js";
 import { AlertService } from "./endpoints/alerts.js";
 import { AuthService } from "./endpoints/auth.js";
 import { BlocksService } from "./endpoints/blocks.js";
@@ -53,9 +53,8 @@ export class BackstageClient {
   public readonly website: WebsiteService;
 
   constructor(config?: BackstageUserConfig) {
-    // If no config is passed, try to get from the global config
-    const globalConfig = getGlobalConfig();
-    const finalConfig = config || globalConfig;
+    // Values missing from the passed config fall back to env/defineConfig.
+    const finalConfig = resolveConfig(config);
 
     if (!finalConfig) {
       throw new Error("No Backstage config found. Please call defineConfig() or pass config to BackstageClient.");
