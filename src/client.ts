@@ -127,16 +127,28 @@ export class BackstageClient {
       const response = await fetch(fullUrl, fetchOptions);
       if (!response.ok) {
         const errorText = await response.text();
+        const errorData = this.parseResponseBody(errorText);
         const error = new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
         (error as any).status = response.status;
-        (error as any).response = { status: response.status, data: errorText };
-        if (this.onError) this.onError(error);
+        (error as any).response = { status: response.status, data: errorData };
         throw error;
       }
       return await response.json();
     } catch (error) {
       if (this.onError) this.onError(error as Error);
       throw error;
+    }
+  }
+
+  private parseResponseBody(body: string): unknown {
+    if (!body) {
+      return body;
+    }
+
+    try {
+      return JSON.parse(body);
+    } catch {
+      return body;
     }
   }
 

@@ -108,3 +108,37 @@ test("studio entrypoint stays importable from the built package", async () => {
   assert.equal(typeof studio.defineBlock, "function");
   assert.equal(typeof studio.defineField, "function");
 });
+
+test("HTTP errors expose parsed JSON response data", async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async () => ({
+    ok: false,
+    status: 409,
+    statusText: "Conflict",
+    async text() {
+      return JSON.stringify("block-123");
+    },
+  });
+
+  try {
+    const client = new BackstageClient({
+      accountId: "account-123",
+      baseURL: "https://example.com/api",
+      token: "token-123",
+    });
+
+    await assert.rejects(
+      () => client.blocks.create({ name: "Hero", slug: "hero", schema: { fields: [] } }),
+      (error) => {
+        assert.equal(error.status, 409);
+        assert.equal(error.response.status, 409);
+        assert.equal(error.response.data, "block-123");
+        assert.match(error.message, /HTTP 409: Conflict/);
+        return true;
+      },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
