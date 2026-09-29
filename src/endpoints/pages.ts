@@ -1,20 +1,22 @@
 import type { ApiCollectionResponse, ApiSingleResponse, HeadlessPage, Page } from "../types/index";
+import type { AccountLayout } from "../types/account-layout.js";
 import { BaseService } from "./base.js";
 
-type HeadlessPageResponse = Omit<HeadlessPage, "blocks"> & {
+type HeadlessPageResponse = Omit<HeadlessPage, "blocks" | "layout"> & {
   blocks: Array<Omit<HeadlessPage["blocks"][number], "fields"> & { fields: unknown }>;
+  layout: (Omit<AccountLayout, "data"> & { data: unknown }) | null;
 };
 
-function normalizeBlockFields(fields: unknown, blockId: string): Record<string, unknown> {
-  if (fields !== null && typeof fields === "object" && !Array.isArray(fields)) {
-    return fields as Record<string, unknown>;
+function normalizeObject(value: unknown, context: string): Record<string, unknown> {
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
   }
 
-  if (Array.isArray(fields) && fields.length === 0) {
+  if (Array.isArray(value) && value.length === 0) {
     return {};
   }
 
-  throw new TypeError(`Headless page block ${blockId} must have object-shaped fields.`);
+  throw new TypeError(`${context} must be object-shaped.`);
 }
 
 export interface CreatePageParams {
@@ -48,8 +50,11 @@ export class PageService extends BaseService {
       ...page,
       blocks: page.blocks.map((block) => ({
         ...block,
-        fields: normalizeBlockFields(block.fields, block.id),
+        fields: normalizeObject(block.fields, `Headless page block ${block.id} fields`),
       })),
+      layout: page.layout
+        ? { ...page.layout, data: normalizeObject(page.layout.data, `Headless page ${page.id} layout data`) }
+        : null,
     }));
   }
 

@@ -58,6 +58,69 @@ test("PageService rejects malformed nonempty Headless block fields", async () =>
 
   await assert.rejects(
     () => new PageService(client).getHeadlessPages(),
-    /Headless page block block-1 must have object-shaped fields/,
+    /Headless page block block-1 fields must be object-shaped/,
+  );
+});
+
+test("PageService normalizes empty layout data and preserves arbitrary field values", async () => {
+  const page = {
+    id: "page-1",
+    title: "Home",
+    slug: "/",
+    pathname: "/",
+    blocks: [],
+    settings: {},
+    is_home: true,
+    layout: {
+      id: "layout-1",
+      name: "Site layout",
+      slug: "site-layout",
+      schema: { fields: [] },
+      data: [],
+    },
+    meta: { title: "Home", description: null },
+  };
+  const client = {
+    get: async () => ({ data: [page] }),
+  } as unknown as BackstageClient;
+
+  const result = await new PageService(client).getHeadlessPages();
+  assert.deepEqual(result[0].layout?.data, {});
+
+  const layoutData = { eyebrow: "Welcome", show_banner: true, media: { id: "media-1" } };
+  const populatedClient = {
+    get: async () => ({ data: [{ ...page, layout: { ...page.layout, data: layoutData } }] }),
+  } as unknown as BackstageClient;
+  const populated = await new PageService(populatedClient).getHeadlessPages();
+
+  assert.deepEqual(populated[0].layout?.data, layoutData);
+});
+
+test("PageService rejects malformed Headless layout data", async () => {
+  const client = {
+    get: async () => ({
+      data: [{
+        id: "page-1",
+        title: "Home",
+        slug: "/",
+        pathname: "/",
+        blocks: [],
+        settings: {},
+        is_home: true,
+        layout: {
+          id: "layout-1",
+          name: "Site layout",
+          slug: "site-layout",
+          schema: { fields: [] },
+          data: ["invalid"],
+        },
+        meta: { title: "Home", description: null },
+      }],
+    }),
+  } as unknown as BackstageClient;
+
+  await assert.rejects(
+    () => new PageService(client).getHeadlessPages(),
+    /Headless page page-1 layout data must be object-shaped/,
   );
 });
