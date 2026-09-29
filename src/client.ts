@@ -22,6 +22,16 @@ import { RouteService } from "./endpoints/routes.js";
 import { WebsiteService } from "./endpoints/website.js";
 import { MediaService } from "./endpoints/media.js";
 
+function mergeHeaders(defaults: HeadersInit, overrides?: HeadersInit): Headers {
+  const headers = new Headers(defaults);
+
+  if (overrides) {
+    new Headers(overrides).forEach((value, name) => headers.set(name, value));
+  }
+
+  return headers;
+}
+
 export class BackstageClient {
   private baseURL: string;
   private token: string;
@@ -114,9 +124,9 @@ export class BackstageClient {
     }
 
     const fetchOptions: RequestInit = {
-      method,
-      headers: { ...defaultHeaders, ...options?.headers },
       ...options,
+      method,
+      headers: mergeHeaders(defaultHeaders, options?.headers),
     };
 
     if (data && !fetchOptions.body && (method === "POST" || method === "PUT" || method === "PATCH")) {

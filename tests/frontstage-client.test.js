@@ -41,12 +41,11 @@ async function withMockedFetch(body, run) {
 }
 
 function assertDefaultHeaders(call) {
-  assert.deepEqual(call.options.headers, {
-    Accept: "application/json",
-    Authorization: "Bearer token-123",
-    "Content-Type": "application/json",
-    "X-Account-ID": "account-123",
-  });
+  const headers = new Headers(call.options.headers);
+  assert.equal(headers.get("Accept"), "application/json");
+  assert.equal(headers.get("Authorization"), "Bearer token-123");
+  assert.equal(headers.get("Content-Type"), "application/json");
+  assert.equal(headers.get("X-Account-ID"), "account-123");
 }
 
 test("frontstage.site fetches the site contract endpoint", async () => {
@@ -100,6 +99,46 @@ test("frontstage.blocks fetches the block contract collection", async () => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, "https://example.com/api/frontstage/blocks");
   assert.equal(calls[0].options.method, "GET");
+});
+
+test("custom HeadersInit values preserve the SDK authorization and account headers", async () => {
+  const customHeaders = [
+    { headers: { "X-Request-ID": "object-header" }, expected: "object-header" },
+    { headers: new Headers([["X-Request-ID", "headers-instance"]]), expected: "headers-instance" },
+    { headers: [["X-Request-ID", "tuple-header"]], expected: "tuple-header" },
+  ];
+
+  for (const { headers, expected } of customHeaders) {
+    const { calls } = await withMockedFetch({}, (client) => client.get("/probe", { headers, cache: "no-store" }));
+    const mergedHeaders = new Headers(calls[0].options.headers);
+
+    assert.equal(mergedHeaders.get("Authorization"), "Bearer token-123");
+    assert.equal(mergedHeaders.get("X-Account-ID"), "account-123");
+    assert.equal(mergedHeaders.get("Accept"), "application/json");
+    assert.equal(mergedHeaders.get("X-Request-ID"), expected);
+    assert.equal(calls[0].options.cache, "no-store");
+  }
+});
+
+test("explicit client configuration works when process is unavailable", () => {
+  const processDescriptor = Object.getOwnPropertyDescriptor(globalThis, "process");
+  let client;
+
+  Object.defineProperty(globalThis, "process", { configurable: true, value: undefined });
+
+  try {
+    client = new BackstageClient({
+      accountId: "account-123",
+      baseURL: "https://example.com/api",
+      token: "token-123",
+    });
+  } finally {
+    if (processDescriptor) {
+      Object.defineProperty(globalThis, "process", processDescriptor);
+    }
+  }
+
+  assert.ok(client);
 });
 
 test("studio entrypoint stays importable from the built package", async () => {

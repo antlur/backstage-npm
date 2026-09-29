@@ -19,27 +19,27 @@
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "types": "./dist/types/index.d.ts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/types/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./types": {
-      "import": "./dist/types/index.js",
-      "types": "./dist/types/types/*.d.ts"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
     },
     "./studio": {
-      "import": "./dist/studio/index.js",
-      "types": "./dist/studio/index.d.ts"
+      "types": "./dist/studio/index.d.ts",
+      "import": "./dist/studio/index.js"
     },
     "./config": {
-      "import": "./dist/config.js",
-      "types": "./dist/types/config.d.ts"
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
     },
     "./*": {
-      "import": "./dist/*.js",
-      "types": "./dist/types/*.d.ts"
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
     }
   },
   "scripts": {
@@ -52,7 +52,7 @@
     "dev": "tsc --watch",
     "cli": "jiti src/cli/cli.ts",
     "postbuild": "chmod +x ./dist/cli/cli.js",
-    "test": "npm run build && node --test dist/endpoints/alerts.test.js dist/endpoints/frontstage.test.js tests/frontstage-client.test.js tests/block-manifests.test.js"
+    "test": "npm run build && tsc --noEmit --strict --skipLibCheck --target ESNext --module ESNext --moduleResolution bundler tests/public-api.type-test.ts && node --test dist/endpoints/alerts.test.js dist/endpoints/frontstage.test.js tests/frontstage-client.test.js tests/block-manifests.test.js tests/package-exports.test.js"
   },
   "bin": {
     "backstage": "./dist/cli/cli.js"
