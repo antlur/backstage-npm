@@ -31,7 +31,7 @@ export interface AccountLayout {
   slug: string;
   schema: AccountLayoutSchema;
   values?: AccountLayoutValues;
-  data?: AccountLayoutValues;
+  data: Record<string, unknown>;
   created_at?: string;
   updated_at?: string;
 }

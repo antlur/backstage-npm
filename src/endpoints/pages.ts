@@ -1,5 +1,23 @@
-import type { ApiCollectionResponse, ApiSingleResponse, Page } from "../types/index";
+import type { ApiCollectionResponse, ApiSingleResponse, HeadlessPage, Page } from "../types/index";
+import type { AccountLayout } from "../types/account-layout.js";
 import { BaseService } from "./base.js";
+
+type HeadlessPageResponse = Omit<HeadlessPage, "blocks" | "layout"> & {
+  blocks: Array<Omit<HeadlessPage["blocks"][number], "fields"> & { fields: unknown }>;
+  layout: (Omit<AccountLayout, "data"> & { data: unknown }) | null;
+};
+
+function normalizeObject(value: unknown, context: string): Record<string, unknown> {
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  if (Array.isArray(value) && value.length === 0) {
+    return {};
+  }
+
+  throw new TypeError(`${context} must be object-shaped.`);
+}
 
 export interface CreatePageParams {
   title: string;
@@ -24,6 +42,22 @@ export interface UpdatePageParams {
 }
 
 export class PageService extends BaseService {
+  /** Reads pages in the account's Headless block shape. */
+  async getHeadlessPages(options?: RequestInit): Promise<HeadlessPage[]> {
+    const { data } = await this.client.get<ApiCollectionResponse<HeadlessPageResponse>>("/pages", options);
+
+    return data.map((page) => ({
+      ...page,
+      blocks: page.blocks.map((block) => ({
+        ...block,
+        fields: normalizeObject(block.fields, `Headless page block ${block.id} fields`),
+      })),
+      layout: page.layout
+        ? { ...page.layout, data: normalizeObject(page.layout.data, `Headless page ${page.id} layout data`) }
+        : null,
+    }));
+  }
+
   async getPages(options?: RequestInit): Promise<Page[]> {
     const res = await this.client.get<ApiCollectionResponse<Page>>("/pages", options);
     return res.data;
