@@ -209,8 +209,9 @@ test("manifest sync sends the merged identity fields through the existing accoun
     assert.equal(calls[0].options.method, "GET");
     assert.equal(calls[1].url, "https://example.test/api/blocks");
     assert.equal(calls[1].options.method, "POST");
-    assert.equal(calls[1].options.headers.Authorization, "Bearer api-token");
-    assert.equal(calls[1].options.headers["X-Account-ID"], "account-id");
+    const headers = new Headers(calls[1].options.headers);
+    assert.equal(headers.get("Authorization"), "Bearer api-token");
+    assert.equal(headers.get("X-Account-ID"), "account-id");
     assert.equal(JSON.parse(calls[1].options.body).registry_identity, "sunda:hero@1");
     assert.equal(JSON.parse(calls[1].options.body).derived_from, "backstage:hero@1");
   } finally {

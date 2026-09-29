@@ -38,10 +38,12 @@ export interface BackstageUserConfig {
 let userConfig: BackstageUserConfig = {};
 
 function envConfig(): BackstageUserConfig {
+  const env = typeof process === "undefined" ? undefined : process.env;
+
   return {
-    baseURL: process.env.BACKSTAGE_API_URL ?? DEFAULT_BASE_URL,
-    token: process.env.BACKSTAGE_API_KEY ?? undefined,
-    accountId: process.env.BACKSTAGE_ACCOUNT_ID ?? undefined,
+    baseURL: env?.BACKSTAGE_API_URL ?? DEFAULT_BASE_URL,
+    token: env?.BACKSTAGE_API_KEY ?? undefined,
+    accountId: env?.BACKSTAGE_ACCOUNT_ID ?? undefined,
   };
 }
 
