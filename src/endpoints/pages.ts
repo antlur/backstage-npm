@@ -1,4 +1,4 @@
-import type { ApiCollectionResponse, ApiSingleResponse, Page } from "../types/index";
+import type { ApiCollectionResponse, ApiSingleResponse, HeadlessPage, Page } from "../types/index";
 import { BaseService } from "./base.js";
 
 export interface CreatePageParams {
@@ -24,6 +24,12 @@ export interface UpdatePageParams {
 }
 
 export class PageService extends BaseService {
+  /** Reads pages in the account's Headless block shape. */
+  async getHeadlessPages(options?: RequestInit): Promise<HeadlessPage[]> {
+    const { data } = await this.client.get<ApiCollectionResponse<HeadlessPage>>("/pages", options);
+    return data;
+  }
+
   async getPages(options?: RequestInit): Promise<Page[]> {
     const res = await this.client.get<ApiCollectionResponse<Page>>("/pages", options);
     return res.data;

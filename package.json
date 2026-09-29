@@ -1,7 +1,7 @@
 {
   "name": "@antlur/backstage",
   "author": "Anthony Holmes",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "A simple client for Backstage CMS",
   "license": "MIT",
   "repository": {
@@ -52,7 +52,7 @@
     "dev": "tsc --watch",
     "cli": "jiti src/cli/cli.ts",
     "postbuild": "chmod +x ./dist/cli/cli.js",
-    "test": "npm run build && node --test dist/endpoints/alerts.test.js dist/endpoints/frontstage.test.js tests/frontstage-client.test.js tests/block-manifests.test.js"
+    "test": "npm run build && node --test dist/endpoints/alerts.test.js dist/endpoints/forms.test.js dist/endpoints/frontstage.test.js dist/endpoints/pages.test.js tests/frontstage-client.test.js tests/block-manifests.test.js"
   },
   "bin": {
     "backstage": "./dist/cli/cli.js"

@@ -6,6 +6,8 @@ export type * from "./blueprint.js";
 export type * from "./entry.js";
 export type * from "./event.js";
 export type * from "./frontstage.js";
+export type * from "./form.js";
+export type * from "./headless-page.js";
 export type * from "./instagram.js";
 export type * from "./location.js";
 export type * from "./media-item.js";

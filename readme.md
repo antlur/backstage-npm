@@ -79,6 +79,10 @@ const pages = await client.pages.getPages();
 const homePage = await client.pages.getHomePage();
 const page = await client.pages.getPageBySlug("about");
 
+// Read renderer-ready Headless page blocks and a public form definition
+const headlessPages = await client.pages.getHeadlessPages();
+const form = await client.forms.getFormDefinition("contact-form-id");
+
 // Fetch locations
 const locations = await client.locations.getLocations();
 const location = await client.locations.getLocationBySlug("downtown");
@@ -402,6 +406,7 @@ export default defineConfig({
 The client provides the following services:
 
 - `client.pages` - Page management
+- `client.forms` - Form definitions and submissions
 - `client.blocks` - Block management
 - `client.blueprints` - Blueprint (content type) management
 - `client.layouts` - Layout management
