@@ -4,7 +4,7 @@ export interface HeadlessPageBlock {
   id: string;
   type: string;
   variant: string | null;
-  fields: Record<string, unknown> | [];
+  fields: Record<string, unknown>;
 }
 
 export interface HeadlessPageMeta {

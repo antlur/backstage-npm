@@ -1,6 +1,22 @@
 import type { ApiCollectionResponse, ApiSingleResponse, HeadlessPage, Page } from "../types/index";
 import { BaseService } from "./base.js";
 
+type HeadlessPageResponse = Omit<HeadlessPage, "blocks"> & {
+  blocks: Array<Omit<HeadlessPage["blocks"][number], "fields"> & { fields: unknown }>;
+};
+
+function normalizeBlockFields(fields: unknown, blockId: string): Record<string, unknown> {
+  if (fields !== null && typeof fields === "object" && !Array.isArray(fields)) {
+    return fields as Record<string, unknown>;
+  }
+
+  if (Array.isArray(fields) && fields.length === 0) {
+    return {};
+  }
+
+  throw new TypeError(`Headless page block ${blockId} must have object-shaped fields.`);
+}
+
 export interface CreatePageParams {
   title: string;
   slug: string;
@@ -26,8 +42,15 @@ export interface UpdatePageParams {
 export class PageService extends BaseService {
   /** Reads pages in the account's Headless block shape. */
   async getHeadlessPages(options?: RequestInit): Promise<HeadlessPage[]> {
-    const { data } = await this.client.get<ApiCollectionResponse<HeadlessPage>>("/pages", options);
-    return data;
+    const { data } = await this.client.get<ApiCollectionResponse<HeadlessPageResponse>>("/pages", options);
+
+    return data.map((page) => ({
+      ...page,
+      blocks: page.blocks.map((block) => ({
+        ...block,
+        fields: normalizeBlockFields(block.fields, block.id),
+      })),
+    }));
   }
 
   async getPages(options?: RequestInit): Promise<Page[]> {
