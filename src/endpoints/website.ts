@@ -49,7 +49,13 @@ export class WebsiteService extends BaseService {
   }
 
   async getWebsiteRoutes(websiteId: string, options?: RequestInit): Promise<string[]> {
-    return this.client.get<string[]>(`/websites/${websiteId}/routes`, options);
+    const response = await this.client.get<unknown>(`/websites/${websiteId}/routes`, options);
+
+    if (!Array.isArray(response) || response.some((path) => typeof path !== "string")) {
+      throw new Error("Backstage returned an invalid website route list.");
+    }
+
+    return response;
   }
 
   async routes(options?: RequestInit): Promise<string[]> {
