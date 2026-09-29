@@ -23,6 +23,8 @@ export interface AccountBlock {
   slug: string;
   name: string;
   description?: string | null;
+  registry_identity?: string | null;
+  derived_from?: string | null;
   schema: AccountBlockSchema;
   frontstage?: AccountBlockFrontstageConfig | null;
   created_at: string;

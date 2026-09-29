@@ -368,7 +368,23 @@ npx backstage sync layouts
 npx backstage sync all
 ```
 
-Add this to your `backstage.config.ts`:
+Portable block manifests are independent of React components and renderer styling. The SDK registry currently includes `backstage:hero@1`:
+
+```bash
+npx backstage block list
+npx backstage block search hero
+npx backstage block install backstage:hero@1
+npx backstage block fork backstage:hero@1 --namespace=sunda
+npx backstage block validate
+npx backstage sync blocks
+npx backstage sync
+```
+
+`install` writes `blocks/hero/manifest.json` and a basic `Hero.astro` scaffold without overwriting existing files. `fork` writes a site-owned identity such as `sunda:hero@1` and records `derived_from: backstage:hero@1`; edit the manifest schema only after forking. Visual-only renderer changes do not require a semantic fork. `validate` checks all manifests under `blocks/`, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity.
+
+The legacy React `blocks` array in `backstage/config.ts` remains supported and can be synced alongside manifests, but do not define the same slug in both places.
+
+Add this to `backstage/config.ts`:
 
 ```typescript
 import { defineConfig } from "@antlur/backstage";

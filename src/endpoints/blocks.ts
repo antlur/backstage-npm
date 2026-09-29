@@ -7,6 +7,8 @@ export interface CreateBlockParams {
   schema: AccountBlockSchema;
   description?: string;
   frontstage?: AccountBlockFrontstageConfig | null;
+  registry_identity?: string | null;
+  derived_from?: string | null;
 }
 
 export interface UpdateBlockParams {
@@ -15,6 +17,8 @@ export interface UpdateBlockParams {
   schema?: AccountBlockSchema;
   description?: string;
   frontstage?: AccountBlockFrontstageConfig | null;
+  registry_identity?: string | null;
+  derived_from?: string | null;
 }
 
 export class BlocksService extends BaseService {
