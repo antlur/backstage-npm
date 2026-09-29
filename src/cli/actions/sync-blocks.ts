@@ -1,13 +1,31 @@
 import type { BackstageUserConfig } from "../../config.js";
 import { BackstageClient } from "../../client.js";
+import { syncBlockManifests } from "../../blocks/sync.js";
+import { loadBlockManifests } from "./block-manifests.js";
 
 export async function syncBlocks(config: BackstageUserConfig) {
   const client = new BackstageClient(config);
+  const manifests = await loadBlockManifests();
 
-  if (!config.blocks || !config.blocks.length) {
+  if ((!config.blocks || !config.blocks.length) && manifests.length === 0) {
     console.log("No blocks found in config");
     return;
   }
+
+  const configuredSlugs = new Set((config.blocks ?? []).map((block) => block.slug));
+  const manifestSlugs = new Set(manifests.map((manifest) => manifest.slug));
+  const conflictingSlug = [...configuredSlugs].find((slug) => manifestSlugs.has(slug));
+
+  if (conflictingSlug) {
+    throw new Error(`Both backstage/config.ts and a block manifest define slug "${conflictingSlug}". Keep one definition source per slug.`);
+  }
+
+  if (manifests.length > 0) {
+    const result = await syncBlockManifests(client, manifests);
+    console.log(`Manifest sync complete: ${result.created} created, ${result.updated} updated`);
+  }
+
+  if (!config.blocks || !config.blocks.length) return;
 
   const syncPromises = config.blocks.map(async (block) => {
     const blockData = {
