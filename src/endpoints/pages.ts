@@ -22,6 +22,8 @@ function normalizeObject(value: unknown, context: string): Record<string, unknow
 export interface CreatePageParams {
   title: string;
   slug: string;
+  website_id: string;
+  parent_id?: string | null;
   blocks?: any[];
   settings?: any;
   is_home?: boolean;
@@ -33,6 +35,8 @@ export interface CreatePageParams {
 export interface UpdatePageParams {
   title?: string;
   slug?: string;
+  website_id?: string;
+  parent_id?: string | null;
   blocks?: any[];
   settings?: any;
   is_home?: boolean;

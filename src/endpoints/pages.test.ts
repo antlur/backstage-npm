@@ -39,6 +39,47 @@ test("PageService reads Headless pages from the existing account-scoped endpoint
   assert.deepEqual(result[0].blocks[1].fields, {});
 });
 
+test("PageService creates pages with website ownership and optional parent nesting", async () => {
+  const page = { id: "page-1", title: "About", slug: "/about" };
+  const requests: Array<{ path: string; data: unknown; options?: RequestInit }> = [];
+  const client = {
+    post: async (path: string, data: unknown, options?: RequestInit) => {
+      requests.push({ path, data, options });
+      return { data: page };
+    },
+  } as unknown as BackstageClient;
+  const params = {
+    title: "About",
+    slug: "/about",
+    website_id: "website-1",
+    parent_id: "parent-1",
+  };
+  const options = { headers: { "X-Test": "true" } };
+
+  const result = await new PageService(client).createPage(params, options);
+
+  assert.deepEqual(result, page);
+  assert.deepEqual(requests, [{ path: "/pages", data: params, options }]);
+});
+
+test("PageService updates website ownership and allows clearing the parent", async () => {
+  const page = { id: "page-1", title: "About", slug: "/about" };
+  const requests: Array<{ path: string; data: unknown; options?: RequestInit }> = [];
+  const client = {
+    put: async (path: string, data: unknown, options?: RequestInit) => {
+      requests.push({ path, data, options });
+      return { data: page };
+    },
+  } as unknown as BackstageClient;
+  const params = { website_id: "website-2", parent_id: null };
+  const options = { headers: { "X-Test": "true" } };
+
+  const result = await new PageService(client).updatePage("page-1", params, options);
+
+  assert.deepEqual(result, page);
+  assert.deepEqual(requests, [{ path: "/pages/page-1", data: params, options }]);
+});
+
 test("PageService rejects malformed nonempty Headless block fields", async () => {
   const client = {
     get: async () => ({
