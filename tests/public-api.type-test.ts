@@ -15,5 +15,7 @@ type AccountBlockId = AccountBlock["id"];
 type ResolvedRoutePath = ResolvedRoute["meta"]["path"];
 
 void pages.getPages();
+void pages.createPage({ title: "About", slug: "/about", website_id: "website-id", parent_id: null });
+void pages.updatePage("page-id", { website_id: "website-id", parent_id: null });
 void (null as unknown as AccountBlockId);
 void (null as unknown as ResolvedRoutePath);
