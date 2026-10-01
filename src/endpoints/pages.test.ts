@@ -53,6 +53,14 @@ test("PageService creates pages with website ownership and optional parent nesti
     slug: "/about",
     website_id: "website-1",
     parent_id: "parent-1",
+    blocks: {
+      blocks: [{
+        id: "block-1",
+        type: "hero",
+        variant: "default",
+        data: { heading: "Welcome" },
+      }],
+    },
   };
   const options = { headers: { "X-Test": "true" } };
 
@@ -71,7 +79,11 @@ test("PageService updates website ownership and allows clearing the parent", asy
       return { data: page };
     },
   } as unknown as BackstageClient;
-  const params = { website_id: "website-2", parent_id: null };
+  const params = {
+    website_id: "website-2",
+    parent_id: null,
+    blocks: { blocks: [{ id: "block-1", type: "hero", data: { heading: "Updated" } }] },
+  };
   const options = { headers: { "X-Test": "true" } };
 
   const result = await new PageService(client).updatePage("page-1", params, options);

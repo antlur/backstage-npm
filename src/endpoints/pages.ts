@@ -1,4 +1,4 @@
-import type { ApiCollectionResponse, ApiSingleResponse, HeadlessPage, Page } from "../types/index";
+import type { ApiCollectionResponse, ApiSingleResponse, HeadlessPage, Page, PageBlocksWriteInput } from "../types/index";
 import type { AccountLayout } from "../types/account-layout.js";
 import { BaseService } from "./base.js";
 
@@ -24,7 +24,7 @@ export interface CreatePageParams {
   slug: string;
   website_id: string;
   parent_id?: string | null;
-  blocks?: any[];
+  blocks?: PageBlocksWriteInput;
   settings?: any;
   is_home?: boolean;
   layout_id?: string;
@@ -37,7 +37,7 @@ export interface UpdatePageParams {
   slug?: string;
   website_id?: string;
   parent_id?: string | null;
-  blocks?: any[];
+  blocks?: PageBlocksWriteInput;
   settings?: any;
   is_home?: boolean;
   layout_id?: string;
