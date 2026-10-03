@@ -1,0 +1,19 @@
+import type { BlockManifest } from "../manifest.js";
+
+export const callToAction = {
+  manifest_version: 1,
+  type: "block",
+  registry_identity: "starter-astro:call-to-action@1",
+  name: "Call to Action",
+  slug: "call-to-action",
+  description: "A focused section that pairs short supporting copy with one prominent link.",
+  schema: {
+    fields: [
+      { name: "Eyebrow", slug: "eyebrow", type: "text", order: 0 },
+      { name: "Heading", slug: "heading", type: "text", order: 1 },
+      { name: "Body", slug: "body", type: "rich_text", order: 2 },
+      { name: "Button label", slug: "button_label", type: "text", required: true, order: 3 },
+      { name: "Button URL", slug: "button_url", type: "url", required: true, order: 4 },
+    ],
+  },
+} satisfies BlockManifest;

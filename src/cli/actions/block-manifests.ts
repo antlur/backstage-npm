@@ -8,7 +8,7 @@ import {
   searchRegistryBlocks,
   validateBlockManifest,
 } from "../../blocks/registry.js";
-import { createAstroRendererScaffold } from "../../blocks/scaffold.js";
+import { astroRendererFileName, createAstroRendererScaffold } from "../../blocks/scaffold.js";
 
 const BLOCK_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -24,16 +24,17 @@ async function exists(path: string): Promise<boolean> {
 async function writeBlockFiles(manifest: BlockManifest, cwd: string): Promise<string> {
   const directory = resolve(cwd, "blocks", manifest.slug);
   const manifestPath = join(directory, "manifest.json");
-  const rendererPath = join(directory, "Hero.astro");
+  const rendererFileName = astroRendererFileName(manifest.slug);
+  const rendererPath = join(directory, rendererFileName);
 
   if ((await exists(manifestPath)) || (await exists(rendererPath))) {
-    throw new Error(`Refusing to overwrite ${directory}; manifest.json or Hero.astro already exists.`);
+    throw new Error("Refusing to overwrite " + directory + "; manifest.json or " + rendererFileName + " already exists.");
   }
 
   await mkdir(dirname(directory), { recursive: true });
   await mkdir(directory, { recursive: true });
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
-  await writeFile(rendererPath, createAstroRendererScaffold(), { flag: "wx" });
+  await writeFile(rendererPath, createAstroRendererScaffold(manifest), { flag: "wx" });
   return directory;
 }
 
