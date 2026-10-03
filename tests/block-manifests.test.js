@@ -38,6 +38,7 @@ test("registry lists the site starter block contracts and reports unsupported ve
     "starter-astro:image@1",
     "starter-astro:instagram-feed@1",
     "starter-astro:media-with-text@1",
+    "starter-astro:menu@1",
     "starter-astro:rich-text@1",
     "starter-astro:upcoming-events@1",
   ]);
@@ -47,6 +48,16 @@ test("registry lists the site starter block contracts and reports unsupported ve
   );
   assert.equal(getRegistryBlock("backstage:hero@1").registry_identity, "backstage:hero@1");
   assert.equal(searchRegistryBlocks("public Instagram posts").length, 1);
+  assert.equal(getRegistryBlock("starter-astro:menu@1").schema.fields[0].type, "menu_select");
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:call-to-action@1").schema.fields.find(({ slug }) => slug === "actions")?.fields.map(({ slug }) => slug),
+    ["label", "href"],
+  );
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:image-gallery@1").schema.fields.find(({ slug }) => slug === "image_fit")?.options.map(({ value }) => value),
+    ["cover", "contain"],
+  );
+  assert.equal(getRegistryBlock("starter-astro:upcoming-events@1").schema.fields.at(-1)?.slug, "view_all_label");
   assert.throws(() => getRegistryBlock("starter-astro:hero@2"), /Unsupported version/);
   assert.throws(() => getRegistryBlock("backstage:missing@1"), /not available/);
 });
@@ -134,6 +145,10 @@ test("CLI installs without overwriting, forks with provenance, and validates man
   assert.match(await readFile(callToActionPath, "utf8"), /CallToActionBlock/);
   assert.doesNotMatch(await readFile(callToActionPath, "utf8"), /HeroBlock/);
 
+  const menuInstall = runCli(["block", "install", "starter-astro:menu@1"], cwd);
+  assert.equal(menuInstall.status, 0, menuInstall.stderr);
+  assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "menu", "manifest.json"), "utf8")).schema.fields[0].type, "menu_select");
+
   const repeatedInstall = runCli(["block", "install", "starter-astro:hero@1"], cwd);
   assert.notEqual(repeatedInstall.status, 0);
   assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).registry_identity, "starter-astro:hero@1");
@@ -146,7 +161,7 @@ test("CLI installs without overwriting, forks with provenance, and validates man
 
   const validation = runCli(["block", "validate"], cwd);
   assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.stdout, /Validated 3 block manifest/);
+  assert.match(validation.stdout, /Validated 4 block manifest/);
 
   const unsupported = runCli(["block", "install", "starter-astro:hero@2"], cwd);
   assert.notEqual(unsupported.status, 0);

@@ -9,6 +9,7 @@ import { image } from "./registry/image.js";
 import { imageGallery } from "./registry/image-gallery.js";
 import { instagramFeed } from "./registry/instagram-feed.js";
 import { mediaWithText } from "./registry/media-with-text.js";
+import { menu } from "./registry/menu.js";
 import { richText } from "./registry/rich-text.js";
 import { upcomingEvents } from "./registry/upcoming-events.js";
 
@@ -40,6 +41,7 @@ const registry: readonly BlockManifest[] = [
   mediaWithText,
   cardGrid,
   callToAction,
+  menu,
   upcomingEvents,
   instagramFeed,
   contactForm,

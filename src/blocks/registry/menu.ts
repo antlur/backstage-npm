@@ -1,0 +1,15 @@
+import type { BlockManifest } from "../manifest.js";
+
+export const menu = {
+  manifest_version: 1,
+  type: "block",
+  registry_identity: "starter-astro:menu@1",
+  name: "Menu",
+  slug: "menu",
+  description: "Display a selected Backstage menu with its categories, item details, and prices.",
+  schema: {
+    fields: [
+      { name: "Menu", slug: "menu_id", type: "menu_select", required: true, order: 0 },
+    ],
+  },
+} satisfies BlockManifest;

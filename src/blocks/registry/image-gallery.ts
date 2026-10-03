@@ -6,7 +6,7 @@ export const imageGallery = {
   registry_identity: "starter-astro:image-gallery@1",
   name: "Image Gallery",
   slug: "image-gallery",
-  description: "A responsive gallery for a collection of editorial images.",
+  description: "A responsive gallery for editorial images or uncropped promotional graphics.",
   schema: {
     fields: [
       { name: "Eyebrow", slug: "eyebrow", type: "text", order: 0 },
@@ -24,6 +24,17 @@ export const imageGallery = {
         order: 2,
       },
       {
+        name: "Image fit",
+        slug: "image_fit",
+        type: "select",
+        placeholder: "Crop to fill (default)",
+        options: [
+          { label: "Crop to fill", value: "cover" },
+          { label: "Show full image", value: "contain" },
+        ],
+        order: 3,
+      },
+      {
         name: "Images",
         slug: "images",
         type: "repeater",
@@ -32,7 +43,7 @@ export const imageGallery = {
           { name: "Image alt text", slug: "imageAlt", type: "text", order: 1 },
           { name: "Caption", slug: "caption", type: "text", order: 2 },
         ],
-        order: 3,
+        order: 4,
       },
     ],
   },

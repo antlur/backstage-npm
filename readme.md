@@ -100,7 +100,7 @@ const customBlocksEnabled = await client.modules.isEnabled("cms.custom_blocks");
 
 ## SDK Block Registry
 
-The registry ships versioned, framework-neutral schemas for the initial site-building block set: Hero, Rich Text, Image, Image Gallery, Media With Text, Card Grid, Call to Action, Upcoming Events, Instagram Feed, and Contact Form. The original `backstage:hero@1` contract remains available alongside the renderer-aligned `starter-astro:hero@1` contract; published identities remain immutable.
+The registry ships versioned, framework-neutral schemas for the initial site-building block set: Hero, Rich Text, Image, Image Gallery, Media With Text, Card Grid, Call to Action, Menu, Upcoming Events, Instagram Feed, and Contact Form. Menu blocks select canonical Backstage menu data instead of copying menu content into page fields. The original `backstage:hero@1` contract remains available alongside the renderer-aligned `starter-astro:hero@1` contract; published identities remain immutable.
 
 The registry owns each block's portable Backstage field contract. A frontend owns its renderer and visual design. Use the CLI to discover contracts with `backstage block list` or `backstage block search`, install a contract with `backstage block install`, or create a site-owned fork with `backstage block fork --namespace restaurant-site`. The install/fork commands create a manifest and a generic Astro renderer scaffold; they do not supply production styling or replace a starter's tested renderer.
 
