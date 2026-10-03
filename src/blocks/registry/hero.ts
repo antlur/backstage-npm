@@ -1,0 +1,61 @@
+import type { BlockManifest } from "../manifest.js";
+
+export const starterHero = {
+  manifest_version: 1,
+  type: "block",
+  registry_identity: "starter-astro:hero@1",
+  derived_from: "backstage:hero@1",
+  name: "Hero",
+  slug: "hero",
+  description: "A flexible page introduction with optional text, image, logo, and actions.",
+  schema: {
+    fields: [
+      {
+        name: "Variant",
+        slug: "variant",
+        type: "select",
+        placeholder: "Default (automatic)",
+        options: [
+          { label: "Default", value: "default" },
+          { label: "Full bleed image", value: "full-bleed-image" },
+        ],
+        order: 0,
+      },
+      { name: "Eyebrow", slug: "eyebrow", type: "text", order: 1 },
+      { name: "Heading", slug: "heading", type: "text", order: 2 },
+      { name: "Body", slug: "body", type: "rich_text", order: 3 },
+      {
+        name: "Background images",
+        slug: "image",
+        type: "image_list",
+        description: "Select one image for a static hero or several for a manually browsable image sequence.",
+        order: 4,
+      },
+      {
+        name: "Image alt text",
+        slug: "imageAlt",
+        type: "text",
+        description: "Describe the image when it conveys information; leave blank when it is decorative.",
+        order: 5,
+      },
+      { name: "Logo", slug: "logo", type: "image", order: 6 },
+      {
+        name: "Logo alt text",
+        slug: "logoAlt",
+        type: "text",
+        description: "Describe the logo when it is the only way the brand name is presented.",
+        order: 7,
+      },
+      {
+        name: "Actions",
+        slug: "actions",
+        type: "repeater",
+        fields: [
+          { name: "Label", slug: "label", type: "text", required: true, order: 0 },
+          { name: "URL", slug: "href", type: "url", required: true, order: 1 },
+        ],
+        order: 8,
+      },
+    ],
+  },
+} satisfies BlockManifest;

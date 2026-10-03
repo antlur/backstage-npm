@@ -8,6 +8,7 @@ import test from "node:test";
 
 import {
   getRegistryBlock,
+  listRegistryBlocks,
   parseBlockManifest,
   searchRegistryBlocks,
   syncBlockManifests,
@@ -25,10 +26,39 @@ function runCli(args, cwd) {
   });
 }
 
-test("registry lists/searches the versioned hero and reports unsupported versions", () => {
+test("registry lists the site starter block contracts and reports unsupported versions", () => {
+  const identities = listRegistryBlocks().map((manifest) => manifest.registry_identity);
+  assert.deepEqual(identities.sort(), [
+    "backstage:hero@1",
+    "starter-astro:call-to-action@1",
+    "starter-astro:card-grid@1",
+    "starter-astro:contact-form@1",
+    "starter-astro:hero@1",
+    "starter-astro:image-gallery@1",
+    "starter-astro:image@1",
+    "starter-astro:instagram-feed@1",
+    "starter-astro:media-with-text@1",
+    "starter-astro:menu@1",
+    "starter-astro:rich-text@1",
+    "starter-astro:upcoming-events@1",
+  ]);
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:hero@1").schema.fields.map(({ slug }) => slug),
+    ["variant", "eyebrow", "heading", "body", "image", "imageAlt", "logo", "logoAlt", "actions"],
+  );
   assert.equal(getRegistryBlock("backstage:hero@1").registry_identity, "backstage:hero@1");
-  assert.equal(searchRegistryBlocks("introduction").length, 1);
-  assert.throws(() => getRegistryBlock("backstage:hero@2"), /Unsupported version/);
+  assert.equal(searchRegistryBlocks("public Instagram posts").length, 1);
+  assert.equal(getRegistryBlock("starter-astro:menu@1").schema.fields[0].type, "menu_select");
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:call-to-action@1").schema.fields.find(({ slug }) => slug === "actions")?.fields.map(({ slug }) => slug),
+    ["label", "href"],
+  );
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:image-gallery@1").schema.fields.find(({ slug }) => slug === "image_fit")?.options.map(({ value }) => value),
+    ["cover", "contain"],
+  );
+  assert.equal(getRegistryBlock("starter-astro:upcoming-events@1").schema.fields.at(-1)?.slug, "view_all_label");
+  assert.throws(() => getRegistryBlock("starter-astro:hero@2"), /Unsupported version/);
   assert.throws(() => getRegistryBlock("backstage:missing@1"), /not available/);
 });
 
@@ -41,7 +71,7 @@ test("manifest validation checks supported schema fields, identity, and explicit
     /Unsupported manifest_version/,
   );
   assert.throws(
-    () => validateBlockManifest({ ...hero, registry_identity: "backstage:hero@2" }),
+    () => validateBlockManifest({ ...hero, registry_identity: "backstage:hero@3" }),
     /Unsupported registry identity/,
   );
   assert.throws(
@@ -70,9 +100,12 @@ test("manifest validation checks supported schema fields, identity, and explicit
   presentationChange.schema.fields[1].name = "Main heading";
   presentationChange.schema.fields[1].order = 10;
   assert.equal(validateBlockManifest(presentationChange).registry_identity, "backstage:hero@1");
+
+  const starterHero = getRegistryBlock("starter-astro:hero@1");
+  assert.equal(validateBlockManifest(starterHero).derived_from, "backstage:hero@1");
   assert.throws(
-    () => validateBlockManifest({ ...hero, derived_from: "sunda:hero@1" }),
-    /registry-owned and cannot have derived_from/,
+    () => validateBlockManifest({ ...starterHero, derived_from: "backstage:hero@2" }),
+    /registry-owned and its derived_from value cannot be changed/,
   );
 
   const fork = {
@@ -98,29 +131,39 @@ test("CLI installs without overwriting, forks with provenance, and validates man
   assert.equal(search.status, 0, search.stderr);
   assert.match(search.stdout, /backstage:hero@1/);
 
-  const install = runCli(["block", "install", "backstage:hero@1"], cwd);
+  const install = runCli(["block", "install", "starter-astro:hero@1"], cwd);
   assert.equal(install.status, 0, install.stderr);
   const manifestPath = join(cwd, "blocks", "hero", "manifest.json");
   const astroPath = join(cwd, "blocks", "hero", "Hero.astro");
   const installed = JSON.parse(await readFile(manifestPath, "utf8"));
-  assert.equal(installed.registry_identity, "backstage:hero@1");
-  assert.match(await readFile(astroPath, "utf8"), /safeHref/);
+  assert.equal(installed.registry_identity, "starter-astro:hero@1");
+  assert.match(await readFile(astroPath, "utf8"), /HeroBlock/);
 
-  const repeatedInstall = runCli(["block", "install", "backstage:hero@1"], cwd);
+  const callToActionInstall = runCli(["block", "install", "starter-astro:call-to-action@1"], cwd);
+  assert.equal(callToActionInstall.status, 0, callToActionInstall.stderr);
+  const callToActionPath = join(cwd, "blocks", "call-to-action", "CallToAction.astro");
+  assert.match(await readFile(callToActionPath, "utf8"), /CallToActionBlock/);
+  assert.doesNotMatch(await readFile(callToActionPath, "utf8"), /HeroBlock/);
+
+  const menuInstall = runCli(["block", "install", "starter-astro:menu@1"], cwd);
+  assert.equal(menuInstall.status, 0, menuInstall.stderr);
+  assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "menu", "manifest.json"), "utf8")).schema.fields[0].type, "menu_select");
+
+  const repeatedInstall = runCli(["block", "install", "starter-astro:hero@1"], cwd);
   assert.notEqual(repeatedInstall.status, 0);
-  assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).registry_identity, "backstage:hero@1");
+  assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).registry_identity, "starter-astro:hero@1");
 
-  const fork = runCli(["block", "fork", "backstage:hero@1", "--namespace", "sunda"], cwd);
+  const fork = runCli(["block", "fork", "starter-astro:hero@1", "--namespace", "sunda"], cwd);
   assert.equal(fork.status, 0, fork.stderr);
   const forked = JSON.parse(await readFile(join(cwd, "blocks", "sunda-hero", "manifest.json"), "utf8"));
   assert.equal(forked.registry_identity, "sunda:hero@1");
-  assert.equal(forked.derived_from, "backstage:hero@1");
+  assert.equal(forked.derived_from, "starter-astro:hero@1");
 
   const validation = runCli(["block", "validate"], cwd);
   assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.stdout, /Validated 2 block manifest/);
+  assert.match(validation.stdout, /Validated 4 block manifest/);
 
-  const unsupported = runCli(["block", "install", "backstage:hero@2"], cwd);
+  const unsupported = runCli(["block", "install", "starter-astro:hero@2"], cwd);
   assert.notEqual(unsupported.status, 0);
   assert.match(unsupported.stderr, /Unsupported version/);
 

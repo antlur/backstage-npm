@@ -98,6 +98,14 @@ const menu = await client.menus.getMenu("main-menu");
 const customBlocksEnabled = await client.modules.isEnabled("cms.custom_blocks");
 ```
 
+## SDK Block Registry
+
+The registry ships versioned, framework-neutral schemas for the initial site-building block set: Hero, Rich Text, Image, Image Gallery, Media With Text, Card Grid, Call to Action, Menu, Upcoming Events, Instagram Feed, and Contact Form. Menu blocks select canonical Backstage menu data instead of copying menu content into page fields. The original `backstage:hero@1` contract remains available alongside the renderer-aligned `starter-astro:hero@1` contract; published identities remain immutable.
+
+The registry owns each block's portable Backstage field contract. A frontend owns its renderer and visual design. Use the CLI to discover contracts with `backstage block list` or `backstage block search`, install a contract with `backstage block install`, or create a site-owned fork with `backstage block fork --namespace restaurant-site`. The install/fork commands create a manifest and a generic Astro renderer scaffold; they do not supply production styling or replace a starter's tested renderer.
+
+Validate local manifests before syncing them to an account with `backstage block validate`. The Astro headless starter includes maintained renderers for this block set and syncs its site-owned block definitions into an account with `npm run sync:blocks`.
+
 ## Defining Custom Blocks
 
 Create type-safe blocks for your CMS:
@@ -372,19 +380,19 @@ npx backstage sync layouts
 npx backstage sync all
 ```
 
-Portable block manifests are independent of React components and renderer styling. The SDK registry currently includes `backstage:hero@1`:
+Portable block manifests are independent of React components and renderer styling. The SDK registry includes the legacy-compatible `backstage:hero@1` contract and the site-building contracts under the `starter-astro` namespace:
 
 ```bash
 npx backstage block list
 npx backstage block search hero
-npx backstage block install backstage:hero@1
-npx backstage block fork backstage:hero@1 --namespace=sunda
+npx backstage block install starter-astro:hero@1
+npx backstage block fork starter-astro:hero@1 --namespace=restaurant-site
 npx backstage block validate
 npx backstage sync blocks
 npx backstage sync
 ```
 
-`install` writes `blocks/hero/manifest.json` and a basic `Hero.astro` scaffold without overwriting existing files. `fork` writes a site-owned identity such as `sunda:hero@1` and records `derived_from: backstage:hero@1`; edit the manifest schema only after forking. Visual-only renderer changes do not require a semantic fork. `validate` checks all manifests under `blocks/`, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity.
+`install` writes `blocks/hero/manifest.json` and a block-named generic Astro scaffold without overwriting existing files. `fork` writes a site-owned identity such as `restaurant-site:hero@1` and records `derived_from: starter-astro:hero@1`; edit the manifest schema only after forking. Visual-only renderer changes do not require a semantic fork. `validate` checks all manifests under `blocks/`, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity.
 
 The legacy React `blocks` array in `backstage/config.ts` remains supported and can be synced alongside manifests, but do not define the same slug in both places.
 

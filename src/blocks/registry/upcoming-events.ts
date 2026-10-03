@@ -1,0 +1,19 @@
+import type { BlockManifest } from "../manifest.js";
+
+export const upcomingEvents = {
+  manifest_version: 1,
+  type: "block",
+  registry_identity: "starter-astro:upcoming-events@1",
+  name: "Upcoming Events",
+  slug: "upcoming-events",
+  description: "Show a short list of upcoming events managed in Backstage.",
+  schema: {
+    fields: [
+      { name: "Eyebrow", slug: "eyebrow", type: "text", order: 0 },
+      { name: "Title", slug: "title", type: "text", order: 1 },
+      { name: "Description", slug: "description", type: "rich_text", order: 2 },
+      { name: "Number of events", slug: "count", type: "number", placeholder: "3", order: 3 },
+      { name: "View all label", slug: "view_all_label", type: "text", placeholder: "View all events", order: 4 },
+    ],
+  },
+} satisfies BlockManifest;

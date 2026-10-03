@@ -1,39 +1,31 @@
-export function createAstroRendererScaffold(): string {
-  return `---
-type HeroBlock = {
-  fields: {
-    eyebrow?: string | null;
-    heading?: string | null;
-    body?: string | null;
-    image?: { url: string; alt?: string | null } | null;
-    primary_action_label?: string | null;
-    primary_action_url?: string | null;
-  };
-};
+import type { BlockManifest } from "./manifest.js";
 
-const { block } = Astro.props as { block: HeroBlock };
-const { eyebrow, heading, body, image, primary_action_label, primary_action_url } = block.fields;
+export function astroRendererFileName(slug: string): string {
+  const componentName = slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join("");
 
-function safeHref(value?: string | null) {
-  if (!value) return undefined;
-
-  try {
-    const url = new URL(value, "https://backstage.invalid");
-    return ["http:", "https:", "mailto:", "tel:"].includes(url.protocol) ? value : undefined;
-  } catch {
-    return undefined;
-  }
+  return componentName + ".astro";
 }
 
-const actionHref = safeHref(primary_action_url);
----
+export function createAstroRendererScaffold(manifest: Pick<BlockManifest, "name" | "slug">): string {
+  const componentName = astroRendererFileName(manifest.slug).replace(/\.astro$/, "");
 
-<div>
-  {image?.url && <img src={image.url} alt={image.alt ?? ""} />}
-  {eyebrow && <p>{eyebrow}</p>}
-  {heading && <h2>{heading}</h2>}
-  {body && <p>{body}</p>}
-  {primary_action_label && actionHref && <a href={actionHref}>{primary_action_label}</a>}
-</div>
-`;
+  return [
+    "---",
+    "type " + componentName + "Block = {",
+    "  type?: string;",
+    "  fields: Record<string, unknown>;",
+    "};",
+    "",
+    "const { block } = Astro.props as { block: " + componentName + "Block };",
+    "---",
+    "",
+    "<section class=\"block block--" + manifest.slug + "\" data-block={block.type ?? \"" + manifest.slug + "\"}>",
+    "  <!-- Render " + manifest.name + " using its fields; sanitize rich text before rendering HTML. -->",
+    "</section>",
+    "",
+  ].join("\n");
 }
