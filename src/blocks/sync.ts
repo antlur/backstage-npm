@@ -1,4 +1,6 @@
 import type { BackstageClient } from "../client.js";
+import type { AccountBlock } from "../types/account-block.js";
+import type { Field } from "../studio/types/field.js";
 import type { BlockManifest } from "./manifest.js";
 import { validateBlockManifest } from "./registry.js";
 
@@ -7,6 +9,11 @@ type BlockSyncClient = Pick<BackstageClient, "blocks">;
 export interface BlockManifestSyncResult {
   created: number;
   updated: number;
+  unchanged: number;
+}
+
+export interface BlockManifestSyncOptions {
+  dryRun?: boolean;
 }
 
 function apiPayload(manifest: BlockManifest) {
@@ -20,7 +27,7 @@ function apiPayload(manifest: BlockManifest) {
   };
 }
 
-function findSingleIdentityMatch(blocks: Awaited<ReturnType<BlockSyncClient["blocks"]["list"]>>, identity: string) {
+function findSingleIdentityMatch(blocks: AccountBlock[], identity: string): AccountBlock | undefined {
   const matches = blocks.filter((block) => block.registry_identity === identity);
 
   if (matches.length > 1) {
@@ -51,9 +58,98 @@ function statusOf(error: unknown): number | undefined {
   return typeof response?.status === "number" ? response.status : undefined;
 }
 
+function accountOnlyFields(localFields: readonly Field[], accountFields: readonly Field[], parent = ""): string[] {
+  const localBySlug = new Map(localFields.map((field) => [field.slug, field]));
+
+  return accountFields.flatMap((accountField) => {
+    const path = parent ? `${parent}.${accountField.slug}` : accountField.slug;
+    const localField = localBySlug.get(accountField.slug);
+
+    if (!localField) return [path];
+
+    return accountOnlyFields(localField.fields ?? [], accountField.fields ?? [], path);
+  });
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+    const members = Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`);
+    return `{${members.join(",")}}`;
+  }
+
+  return JSON.stringify(value) ?? "null";
+}
+
+function normalizedFields(fields: readonly Field[]): unknown[] {
+  return fields.map((field) => {
+    const { type_id: _typeId, fields: nestedFields, ...portable } = field as Field & { type_id?: string | null };
+
+    return {
+      ...portable,
+      description: field.description ?? null,
+      placeholder: field.placeholder ?? null,
+      required: Boolean(field.required),
+      options: field.options ?? [],
+      allowed_references: field.allowed_references ?? [],
+      is_multiple: Boolean(field.is_multiple),
+      is_primary: Boolean(field.is_primary),
+      show_in_list: Boolean(field.show_in_list),
+      order: field.order ?? null,
+      value: field.value ?? null,
+      fields: normalizedFields(nestedFields ?? []),
+    };
+  });
+}
+
+function matchesManifest(existing: AccountBlock, manifest: BlockManifest): boolean {
+  return existing.name === manifest.name
+    && existing.slug === manifest.slug
+    && (manifest.description === undefined || (existing.description ?? null) === manifest.description)
+    && (existing.registry_identity ?? null) === manifest.registry_identity
+    && (manifest.derived_from === undefined || (existing.derived_from ?? null) === manifest.derived_from)
+    && stableJson(normalizedFields(existing.schema?.fields ?? [])) === stableJson(normalizedFields(manifest.schema.fields));
+}
+
+function planManifest(manifest: BlockManifest, blocks: AccountBlock[]) {
+  const existing = findSingleIdentityMatch(blocks, manifest.registry_identity);
+  assertSlugAvailable(blocks, manifest.slug, manifest.registry_identity, existing?.id);
+
+  if (existing && existing.slug !== manifest.slug) {
+    throw new Error(
+      `Cannot change the slug for ${manifest.registry_identity} from "${existing.slug}" to "${manifest.slug}" during sync because authored pages may refer to it. Migrate slug references explicitly.`,
+    );
+  }
+
+  if (existing) {
+    const extraFields = accountOnlyFields(manifest.schema.fields, existing.schema?.fields ?? []);
+
+    if (extraFields.length > 0) {
+      throw new Error(
+        `Cannot sync ${manifest.registry_identity}: Backstage block "${manifest.slug}" has fields not present in the local manifest: ${extraFields.join(", ")}. Update the manifest before syncing to avoid removing account fields.`,
+      );
+    }
+  }
+
+  if (!existing) return { manifest, action: "create" as const };
+  if (matchesManifest(existing, manifest)) return { manifest, existing, action: "unchanged" as const };
+  return { manifest, existing, action: "update" as const };
+}
+
+function failureAfterPartialSync(manifest: BlockManifest, result: BlockManifestSyncResult, error: unknown): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  return new Error(
+    `Block sync stopped at ${manifest.registry_identity} after ${result.created} created, ${result.updated} updated, and ${result.unchanged} unchanged. ${detail}`,
+    { cause: error },
+  );
+}
+
 export async function syncBlockManifests(
   client: BlockSyncClient,
   values: readonly unknown[],
+  options: BlockManifestSyncOptions = {},
 ): Promise<BlockManifestSyncResult> {
   const manifests = values.map(validateBlockManifest);
   const identities = new Set<string>();
@@ -72,48 +168,59 @@ export async function syncBlockManifests(
   }
 
   const blocks = await client.blocks.list();
-  const result = { created: 0, updated: 0 };
+  const planned = manifests.map((manifest) => planManifest(manifest, blocks));
+  const result = { created: 0, updated: 0, unchanged: 0 };
 
-  for (const manifest of manifests) {
-    let existing = findSingleIdentityMatch(blocks, manifest.registry_identity);
-    assertSlugAvailable(blocks, manifest.slug, manifest.registry_identity, existing?.id);
+  for (const operation of planned) {
+    const { manifest, existing, action } = operation;
 
-    if (existing) {
-      if (existing.slug !== manifest.slug) {
-        throw new Error(
-          `Cannot change the slug for ${manifest.registry_identity} from "${existing.slug}" to "${manifest.slug}" during sync because authored pages may refer to it. Migrate slug references explicitly.`,
-        );
-      }
-      await client.blocks.update(existing.id, apiPayload(manifest));
-      result.updated += 1;
+    if (action === "unchanged") {
+      result.unchanged += 1;
+      continue;
+    }
+
+    if (options.dryRun) {
+      if (action === "create") result.created += 1;
+      else result.updated += 1;
       continue;
     }
 
     try {
-      existing = await client.blocks.create(apiPayload(manifest));
-      blocks.push(existing);
+      if (action === "update" && existing) {
+        await client.blocks.update(existing.id, apiPayload(manifest));
+        result.updated += 1;
+        continue;
+      }
+
+      await client.blocks.create(apiPayload(manifest));
       result.created += 1;
     } catch (error) {
-      if (statusOf(error) !== 409) throw error;
-
-      const refreshedBlocks = await client.blocks.list();
-      const racedBlock = findSingleIdentityMatch(refreshedBlocks, manifest.registry_identity);
-
-      if (!racedBlock) {
-        throw new Error(
-          `Cannot safely sync ${manifest.registry_identity}: the slug conflicted, but no Backstage block with that identity exists. No existing block was updated.`,
-        );
+      if (action !== "create" || statusOf(error) !== 409) {
+        throw failureAfterPartialSync(manifest, result, error);
       }
 
-      assertSlugAvailable(refreshedBlocks, manifest.slug, manifest.registry_identity, racedBlock.id);
-      if (racedBlock.slug !== manifest.slug) {
-        throw new Error(
-          `Cannot change the slug for ${manifest.registry_identity} from "${racedBlock.slug}" to "${manifest.slug}" during sync because authored pages may refer to it. Migrate slug references explicitly.`,
-        );
+      try {
+        const refreshedBlocks = await client.blocks.list();
+        const raced = planManifest(manifest, refreshedBlocks);
+
+        if (raced.action === "create") {
+          throw new Error(`The create conflicted, but no matching Backstage block was found for ${manifest.registry_identity}.`);
+        }
+
+        if (raced.action === "unchanged") {
+          result.unchanged += 1;
+          continue;
+        }
+
+        if (!raced.existing) {
+          throw new Error(`Backstage did not return the matching block for ${manifest.registry_identity}.`);
+        }
+
+        await client.blocks.update(raced.existing.id, apiPayload(manifest));
+        result.updated += 1;
+      } catch (raceError) {
+        throw failureAfterPartialSync(manifest, result, raceError);
       }
-      await client.blocks.update(racedBlock.id, apiPayload(manifest));
-      blocks.splice(0, blocks.length, ...refreshedBlocks);
-      result.updated += 1;
     }
   }
 

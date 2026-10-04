@@ -358,6 +358,8 @@ When defining fields for blocks and blueprints, you can set various options to c
 
 Sync your blocks, blueprints, and layouts to Backstage CMS:
 
+Preview versioned block-manifest changes without writing with `npx backstage sync blocks --dry-run`. This validates local manifests and account slug/schema safety before reporting planned creates, updates, and unchanged blocks. Legacy `backstage/config.ts` blocks are not previewable.
+
 ```bash
 # Sync blocks only
 npx backstage sync blocks

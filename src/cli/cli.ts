@@ -24,7 +24,12 @@ program
 program
   .command("sync [type]")
   .description("Sync blocks, blueprints, and layouts with the Backstage CMS")
-  .action(async (type = "all") => {
+  .option("--dry-run", "Preview versioned block manifest changes without writing (use with sync blocks)")
+  .action(async (type = "all", options) => {
+    if (options.dryRun && type !== "blocks") {
+      throw new Error("--dry-run is supported only with 'backstage sync blocks'.");
+    }
+
     const backstageConfig = await loadBackstageConfig();
 
     if (!backstageConfig) {
@@ -34,7 +39,7 @@ program
     }
 
     if (type === "blocks") {
-      await syncBlocks(backstageConfig);
+      await syncBlocks(backstageConfig, { dryRun: options.dryRun });
       return;
     }
 
