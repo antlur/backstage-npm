@@ -12,6 +12,7 @@ import { mediaWithText } from "./registry/media-with-text.js";
 import { menu } from "./registry/menu.js";
 import { richText } from "./registry/rich-text.js";
 import { upcomingEvents } from "./registry/upcoming-events.js";
+import { videoHero } from "./registry/video-hero.js";
 
 const heroManifest = {
   manifest_version: 1,
@@ -43,6 +44,7 @@ const registry: readonly BlockManifest[] = [
   callToAction,
   menu,
   upcomingEvents,
+  videoHero,
   instagramFeed,
   contactForm,
 ];
