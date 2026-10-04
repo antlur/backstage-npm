@@ -1,6 +1,17 @@
 import type { Field } from "../studio/types/field.js";
 import type { BlockManifest } from "./manifest.js";
 import { parseBlockIdentity, parseBlockManifest } from "./manifest.js";
+import { callToAction } from "./registry/call-to-action.js";
+import { cardGrid } from "./registry/card-grid.js";
+import { contactForm } from "./registry/contact-form.js";
+import { starterHero } from "./registry/hero.js";
+import { image } from "./registry/image.js";
+import { imageGallery } from "./registry/image-gallery.js";
+import { instagramFeed } from "./registry/instagram-feed.js";
+import { mediaWithText } from "./registry/media-with-text.js";
+import { menu } from "./registry/menu.js";
+import { richText } from "./registry/rich-text.js";
+import { upcomingEvents } from "./registry/upcoming-events.js";
 
 const heroManifest = {
   manifest_version: 1,
@@ -21,7 +32,20 @@ const heroManifest = {
   },
 } satisfies BlockManifest;
 
-const registry = [heroManifest] as const satisfies readonly BlockManifest[];
+const registry: readonly BlockManifest[] = [
+  heroManifest,
+  starterHero,
+  richText,
+  image,
+  imageGallery,
+  mediaWithText,
+  cardGrid,
+  callToAction,
+  menu,
+  upcomingEvents,
+  instagramFeed,
+  contactForm,
+];
 
 function cloneManifest(manifest: BlockManifest): BlockManifest {
   return JSON.parse(JSON.stringify(manifest)) as BlockManifest;
@@ -124,8 +148,8 @@ export function validateBlockManifest(value: unknown): BlockManifest {
     throw new Error(`Unsupported registry identity "${manifest.registry_identity}". The SDK supports ${knownIdentity.registry_identity}.`);
   }
 
-  if (registered && manifest.derived_from != null) {
-    throw new Error(`${manifest.registry_identity} is registry-owned and cannot have derived_from. Fork it to a site namespace instead.`);
+  if (registered && manifest.derived_from !== registered.derived_from) {
+    throw new Error(manifest.registry_identity + " is registry-owned and its derived_from value cannot be changed. Fork it to a site namespace instead.");
   }
 
   if (registered && !sameSemanticDefinition(manifest, registered)) {
