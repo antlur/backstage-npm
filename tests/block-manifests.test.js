@@ -167,6 +167,14 @@ test("CLI installs without overwriting, forks with provenance, and validates man
   assert.notEqual(unsupported.status, 0);
   assert.match(unsupported.stderr, /Unsupported version/);
 
+  const syncHelp = runCli(["sync", "--help"], cwd);
+  assert.equal(syncHelp.status, 0, syncHelp.stderr);
+  assert.match(syncHelp.stdout, /--dry-run/);
+
+  const invalidDryRun = runCli(["sync", "all", "--dry-run"], cwd);
+  assert.notEqual(invalidDryRun.status, 0);
+  assert.match(invalidDryRun.stderr, /supported only with 'backstage sync blocks'/);
+
   const invalidPath = join(cwd, "blocks", "invalid.json");
   await writeFile(invalidPath, JSON.stringify({ ...installed, registry_identity: "bad" }));
   const invalid = runCli(["block", "validate", invalidPath], cwd);
@@ -191,26 +199,134 @@ test("sync creates and updates only definitions by immutable registry identity",
       },
       async create(payload) {
         calls.push({ method: "create", payload });
-        const created = { id: "hero-id", slug: payload.slug, registry_identity: payload.registry_identity };
+        const created = { id: "hero-id", ...payload };
         remote.push(created);
         return created;
       },
       async update(id, payload) {
         calls.push({ method: "update", id, payload });
-        return { id, ...payload };
+        const index = remote.findIndex((block) => block.id === id);
+        remote[index] = { ...remote[index], ...payload };
+        return remote[index];
       },
     },
   };
 
-  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 1, updated: 0 });
+  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 1, updated: 0, unchanged: 0 });
   assert.equal(calls.find((call) => call.method === "create").payload.registry_identity, "sunda:hero@1");
   assert.equal(calls.find((call) => call.method === "create").payload.derived_from, "backstage:hero@1");
 
-  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 1 });
+  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 0, unchanged: 1 });
+  assert.equal(calls.some((call) => call.method === "update"), false);
+
+  const changedManifest = validateBlockManifest({ ...manifest, name: "Sunda Hero" });
+  assert.deepEqual(await syncBlockManifests(client, [changedManifest]), { created: 0, updated: 1, unchanged: 0 });
   const update = calls.find((call) => call.method === "update");
   assert.equal(update.id, "hero-id");
   assert.equal(update.payload.derived_from, "backstage:hero@1");
+  assert.deepEqual(await syncBlockManifests(client, [changedManifest]), { created: 0, updated: 0, unchanged: 1 });
   assert.equal("pages" in client, false);
+});
+
+test("dry-run plans manifest changes without creating or updating account blocks", async () => {
+  const manifest = getRegistryBlock("backstage:hero@1");
+  const writes = [];
+  const client = {
+    blocks: {
+      async list() { return []; },
+      async create(payload) { writes.push({ method: "create", payload }); },
+      async update(id, payload) { writes.push({ method: "update", id, payload }); },
+    },
+  };
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest], { dryRun: true }), {
+    created: 1,
+    updated: 0,
+    unchanged: 0,
+  });
+  assert.deepEqual(writes, []);
+});
+
+test("manifest collisions are all detected before the first account write", async () => {
+  const hero = getRegistryBlock("backstage:hero@1");
+  const first = validateBlockManifest({
+    ...hero,
+    registry_identity: "site:intro@1",
+    derived_from: hero.registry_identity,
+    name: "Intro",
+    slug: "site-intro",
+  });
+  const writes = [];
+  const client = {
+    blocks: {
+      async list() { return [{ id: "legacy", slug: "hero", registry_identity: null }]; },
+      async create(payload) { writes.push({ method: "create", payload }); },
+      async update(id, payload) { writes.push({ method: "update", id, payload }); },
+    },
+  };
+
+  await assert.rejects(() => syncBlockManifests(client, [first, hero]), /already owned by unregistered block/);
+  assert.deepEqual(writes, []);
+});
+
+test("account-only schema fields refuse the entire sync before any writes", async () => {
+  const hero = getRegistryBlock("backstage:hero@1");
+  const first = validateBlockManifest({
+    ...hero,
+    registry_identity: "site:intro@1",
+    derived_from: hero.registry_identity,
+    name: "Intro",
+    slug: "site-intro",
+  });
+  const accountFields = [
+    ...structuredClone(hero.schema.fields),
+    { name: "Account Note", slug: "account_note", type: "text" },
+  ];
+  const writes = [];
+  const client = {
+    blocks: {
+      async list() {
+        return [{
+          id: "hero-id",
+          slug: hero.slug,
+          name: hero.name,
+          description: hero.description,
+          registry_identity: hero.registry_identity,
+          schema: { fields: accountFields },
+        }];
+      },
+      async create(payload) { writes.push({ method: "create", payload }); },
+      async update(id, payload) { writes.push({ method: "update", id, payload }); },
+    },
+  };
+
+  await assert.rejects(() => syncBlockManifests(client, [first, hero]), /account_note/);
+  assert.deepEqual(writes, []);
+});
+
+test("omitted derived_from metadata is preserved and does not cause a needless update", async () => {
+  const manifest = getRegistryBlock("backstage:hero@1");
+  let updated = false;
+  const client = {
+    blocks: {
+      async list() {
+        return [{
+          id: "hero-id",
+          name: manifest.name,
+          slug: manifest.slug,
+          description: manifest.description,
+          registry_identity: manifest.registry_identity,
+          derived_from: "site:legacy-hero@1",
+          schema: structuredClone(manifest.schema),
+        }];
+      },
+      async create() { throw new Error("should not create"); },
+      async update() { updated = true; },
+    },
+  };
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 0, unchanged: 1 });
+  assert.equal(updated, false);
 });
 
 test("manifest sync sends the merged identity fields through the existing account-block endpoint", async () => {
@@ -247,7 +363,7 @@ test("manifest sync sends the merged identity fields through the existing accoun
       token: "api-token",
     });
 
-    assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 1, updated: 0 });
+    assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 1, updated: 0, unchanged: 0 });
     assert.equal(calls[0].url, "https://example.test/api/blocks");
     assert.equal(calls[0].options.method, "GET");
     assert.equal(calls[1].url, "https://example.test/api/blocks");
@@ -329,6 +445,110 @@ test("sync does not treat a create conflict response ID as a registry identity m
     },
   };
 
-  await assert.rejects(() => syncBlockManifests(client, [manifest]), /no Backstage block with that identity exists/);
+  await assert.rejects(() => syncBlockManifests(client, [manifest]), /already owned by unregistered block/);
   assert.equal(updated, false);
+});
+
+test("sync reconciles a concurrent create only when the matching definition is safe", async () => {
+  const manifest = getRegistryBlock("backstage:hero@1");
+  let listCount = 0;
+  let updated = false;
+  const client = {
+    blocks: {
+      async list() {
+        listCount += 1;
+        return listCount === 1 ? [] : [{
+          id: "hero-id",
+          ...manifest,
+          schema: structuredClone(manifest.schema),
+        }];
+      },
+      async create() {
+        const error = new Error("conflict");
+        error.response = { status: 409 };
+        throw error;
+      },
+      async update() { updated = true; },
+    },
+  };
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 0, unchanged: 1 });
+  assert.equal(updated, false);
+  assert.equal(listCount, 2);
+});
+
+test("sync refuses a concurrent matching block with account-only fields", async () => {
+  const manifest = getRegistryBlock("backstage:hero@1");
+  const accountFields = [
+    ...structuredClone(manifest.schema.fields),
+    { name: "Account Note", slug: "account_note", type: "text" },
+  ];
+  let listCount = 0;
+  let updated = false;
+  const client = {
+    blocks: {
+      async list() {
+        listCount += 1;
+        return listCount === 1 ? [] : [{
+          id: "hero-id",
+          name: manifest.name,
+          slug: manifest.slug,
+          registry_identity: manifest.registry_identity,
+          schema: { fields: accountFields },
+        }];
+      },
+      async create() {
+        const error = new Error("conflict");
+        error.response = { status: 409 };
+        throw error;
+      },
+      async update() { updated = true; },
+    },
+  };
+
+  await assert.rejects(() => syncBlockManifests(client, [manifest]), /account_note/);
+  assert.equal(updated, false);
+  assert.equal(listCount, 2);
+});
+
+test("partial sync failures report completed writes for safe recovery", async () => {
+  const hero = getRegistryBlock("backstage:hero@1");
+  const manifests = [
+    validateBlockManifest({
+      ...hero,
+      registry_identity: "site:first@1",
+      derived_from: hero.registry_identity,
+      name: "First",
+      slug: "site-first",
+    }),
+    validateBlockManifest({
+      ...hero,
+      registry_identity: "site:second@1",
+      derived_from: hero.registry_identity,
+      name: "Second",
+      slug: "site-second",
+    }),
+  ];
+  const created = [];
+  const client = {
+    blocks: {
+      async list() { return []; },
+      async create(payload) {
+        if (payload.slug === "site-second") {
+          const error = new Error("API unavailable");
+          error.response = { status: 503 };
+          throw error;
+        }
+        created.push(payload.slug);
+        return { id: "first-id", ...payload };
+      },
+      async update() { throw new Error("should not update"); },
+    },
+  };
+
+  await assert.rejects(
+    () => syncBlockManifests(client, manifests),
+    /stopped at site:second@1 after 1 created, 0 updated, and 0 unchanged.*API unavailable/,
+  );
+  assert.deepEqual(created, ["site-first"]);
 });

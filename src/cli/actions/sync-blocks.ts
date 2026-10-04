@@ -1,11 +1,15 @@
 import type { BackstageUserConfig } from "../../config.js";
 import { BackstageClient } from "../../client.js";
-import { syncBlockManifests } from "../../blocks/sync.js";
+import { syncBlockManifests, type BlockManifestSyncOptions } from "../../blocks/sync.js";
 import { loadBlockManifests } from "./block-manifests.js";
 
-export async function syncBlocks(config: BackstageUserConfig) {
+export async function syncBlocks(config: BackstageUserConfig, options: BlockManifestSyncOptions = {}) {
   const client = new BackstageClient(config);
   const manifests = await loadBlockManifests();
+
+  if (options.dryRun && config.blocks?.length) {
+    throw new Error("--dry-run supports versioned block manifests only; legacy backstage/config.ts blocks are not previewable.");
+  }
 
   if ((!config.blocks || !config.blocks.length) && manifests.length === 0) {
     console.log("No blocks found in config");
@@ -21,8 +25,9 @@ export async function syncBlocks(config: BackstageUserConfig) {
   }
 
   if (manifests.length > 0) {
-    const result = await syncBlockManifests(client, manifests);
-    console.log(`Manifest sync complete: ${result.created} created, ${result.updated} updated`);
+    const result = await syncBlockManifests(client, manifests, options);
+    const status = options.dryRun ? "Manifest sync preview" : "Manifest sync complete";
+    console.log(`${status}: ${result.created} to create, ${result.updated} to update, ${result.unchanged} unchanged`);
   }
 
   if (!config.blocks || !config.blocks.length) return;
