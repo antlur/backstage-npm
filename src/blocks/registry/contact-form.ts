@@ -12,7 +12,7 @@ export const contactForm = {
       { name: "Eyebrow", slug: "eyebrow", type: "text", order: 0 },
       { name: "Heading", slug: "heading", type: "text", order: 1 },
       { name: "Body", slug: "body", type: "rich_text", order: 2 },
-      { name: "Form", slug: "form_id", type: "form_select", order: 3 },
+      { name: "Form", slug: "form_id", type: "form_select", required: true, order: 3 },
       { name: "Submit label", slug: "submit_label", type: "text", order: 4 },
     ],
   },

@@ -50,6 +50,9 @@ test("registry lists the site starter block contracts and reports unsupported ve
   assert.equal(getRegistryBlock("backstage:hero@1").registry_identity, "backstage:hero@1");
   assert.equal(searchRegistryBlocks("public Instagram posts").length, 1);
   assert.equal(getRegistryBlock("starter-astro:menu@1").schema.fields[0].type, "menu_select");
+  const contactForm = getRegistryBlock("starter-astro:contact-form@1");
+  assert.equal(contactForm.schema.fields.find(({ slug }) => slug === "form_id")?.type, "form_select");
+  assert.equal(contactForm.schema.fields.find(({ slug }) => slug === "form_id")?.required, true);
   assert.deepEqual(
     getRegistryBlock("starter-astro:call-to-action@1").schema.fields.find(({ slug }) => slug === "actions")?.fields.map(({ slug }) => slug),
     ["label", "href"],
