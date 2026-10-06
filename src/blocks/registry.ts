@@ -7,6 +7,7 @@ import { contactForm } from "./registry/contact-form.js";
 import { starterHero } from "./registry/hero.js";
 import { image } from "./registry/image.js";
 import { imageGallery } from "./registry/image-gallery.js";
+import { imageLinkGrid } from "./registry/image-link-grid.js";
 import { instagramFeed } from "./registry/instagram-feed.js";
 import { mediaWithText } from "./registry/media-with-text.js";
 import { menu } from "./registry/menu.js";
@@ -39,6 +40,7 @@ const registry: readonly BlockManifest[] = [
   richText,
   image,
   imageGallery,
+  imageLinkGrid,
   mediaWithText,
   cardGrid,
   callToAction,

@@ -35,6 +35,7 @@ test("registry lists the site starter block contracts and reports unsupported ve
     "starter-astro:contact-form@1",
     "starter-astro:hero@1",
     "starter-astro:image-gallery@1",
+    "starter-astro:image-link-grid@1",
     "starter-astro:image@1",
     "starter-astro:instagram-feed@1",
     "starter-astro:media-with-text@1",
@@ -61,6 +62,14 @@ test("registry lists the site starter block contracts and reports unsupported ve
     getRegistryBlock("starter-astro:image-gallery@1").schema.fields.find(({ slug }) => slug === "image_fit")?.options.map(({ value }) => value),
     ["cover", "contain"],
   );
+  const imageLinkGrid = getRegistryBlock("starter-astro:image-link-grid@1");
+  assert.deepEqual(imageLinkGrid.schema.fields.find(({ slug }) => slug === "columns")?.options.map(({ value }) => value), ["2", "3", "4"]);
+  assert.deepEqual(imageLinkGrid.schema.fields.find(({ slug }) => slug === "image_fit")?.options.map(({ value }) => value), ["contain", "cover"]);
+  assert.deepEqual(imageLinkGrid.schema.fields.find(({ slug }) => slug === "items")?.fields.map(({ slug, required }) => [slug, required]), [
+    ["image", true],
+    ["link_url", true],
+    ["link_label", true],
+  ]);
   assert.equal(getRegistryBlock("starter-astro:upcoming-events@1").schema.fields.at(-1)?.slug, "view_all_label");
   assert.deepEqual(
     getRegistryBlock("starter-astro:video-hero@1").schema.fields.map(({ slug }) => slug),
