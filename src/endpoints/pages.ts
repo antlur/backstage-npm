@@ -68,11 +68,8 @@ export class PageService extends BaseService {
   }
 
   async getPage(id: string, options?: RequestInit): Promise<Page | null> {
-    const res = await this.client.get<ApiCollectionResponse<Page>>(`/pages/${id}`, options);
-    if (!res.data || res.data.length === 0) {
-      return null;
-    }
-    return res.data[0];
+    const { data } = await this.client.get<ApiSingleResponse<Page>>(`/pages/${id}`, options);
+    return data ?? null;
   }
 
   async getPageBySlug(slug: string, options?: RequestInit): Promise<Page | null> {
