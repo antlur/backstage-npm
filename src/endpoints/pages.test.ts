@@ -39,6 +39,23 @@ test("PageService reads Headless pages from the existing account-scoped endpoint
   assert.deepEqual(result[0].blocks[1].fields, {});
 });
 
+test("PageService reads an individual page from the single-resource response", async () => {
+  const page = { id: "page-1", title: "About", slug: "about" };
+  const requests: Array<{ path: string; options?: RequestInit }> = [];
+  const client = {
+    get: async (path: string, options?: RequestInit) => {
+      requests.push({ path, options });
+      return { data: page };
+    },
+  } as unknown as BackstageClient;
+  const options = { cache: "no-store" as const };
+
+  const result = await new PageService(client).getPage("page-1", options);
+
+  assert.deepEqual(result, page);
+  assert.deepEqual(requests, [{ path: "/pages/page-1", options }]);
+});
+
 test("PageService creates pages with website ownership and optional parent nesting", async () => {
   const page = { id: "page-1", title: "About", slug: "/about" };
   const requests: Array<{ path: string; data: unknown; options?: RequestInit }> = [];

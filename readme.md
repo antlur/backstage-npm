@@ -100,7 +100,7 @@ const customBlocksEnabled = await client.modules.isEnabled("cms.custom_blocks");
 
 ## SDK Block Registry
 
-The registry ships versioned, framework-neutral schemas for the initial site-building block set: Hero, Rich Text, Image, Image Gallery, Image Link Grid, Media With Text, Card Grid, Call to Action, Menu, Upcoming Events, Instagram Feed, and Contact Form. Image Link Grid supports accessible image-only destinations; use Image Gallery when the images are not links and Card Grid when each item needs visible text. Menu blocks select canonical Backstage menu data instead of copying menu content into page fields. The original `backstage:hero@1` contract remains available alongside the renderer-aligned `starter-astro:hero@1` contract; published identities remain immutable.
+The registry ships versioned, framework-neutral schemas for the initial site-building block set: Hero, Video Hero, Rich Text, Image, Image Gallery, Image Link Grid, Media With Text, Card Grid, Call to Action, Menu, Upcoming Events, Instagram Feed, and Contact Form. Image Link Grid supports accessible image-only destinations; use Image Gallery when the images are not links and Card Grid when each item needs visible text. Menu blocks select canonical Backstage menu data instead of copying menu content into page fields. The original `backstage:hero@1` contract remains available alongside the renderer-aligned `starter-astro:hero@1` contract; published identities remain immutable.
 
 The registry owns each block's portable Backstage field contract. A frontend owns its renderer and visual design. Use the CLI to discover contracts with `backstage block list` or `backstage block search`, install a contract with `backstage block install`, or create a site-owned fork with `backstage block fork --namespace restaurant-site`. The install/fork commands create a manifest and a generic Astro renderer scaffold; they do not supply production styling or replace a starter's tested renderer.
 
@@ -366,7 +366,7 @@ When defining fields for blocks and blueprints, you can set various options to c
 
 Sync your blocks, blueprints, and layouts to Backstage CMS:
 
-Preview versioned block-manifest changes without writing with `npx backstage sync blocks --dry-run`. This validates local manifests and account slug/schema safety before reporting planned creates, updates, and unchanged blocks. Legacy `backstage/config.ts` blocks are not previewable.
+Preview versioned block-manifest changes without writing with `npx backstage sync blocks --dry-run`. This validates local manifests and account slug/schema safety before reporting planned creates, updates, and unchanged blocks. Legacy `backstage/config.ts` blocks are not previewable. If the Backstage API omits schema metadata such as a field's `required` flag, sync reports that limitation and avoids repeating writes for metadata the API does not return; the CMS editor may not enforce that setting.
 
 ```bash
 # Sync blocks only

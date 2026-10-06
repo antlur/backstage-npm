@@ -10,6 +10,7 @@ export interface BlockManifestSyncResult {
   created: number;
   updated: number;
   unchanged: number;
+  warnings?: string[];
 }
 
 export interface BlockManifestSyncOptions {
@@ -104,13 +105,60 @@ function normalizedFields(fields: readonly Field[]): unknown[] {
   });
 }
 
-function matchesManifest(existing: AccountBlock, manifest: BlockManifest): boolean {
+function comparableFields(
+  accountFields: readonly Field[],
+  manifestFields: readonly Field[],
+  identity: string,
+  warnings: Set<string>,
+  parent = "",
+): { account: unknown[]; manifest: unknown[] } {
+  const account = normalizedFields(accountFields) as Array<Record<string, unknown>>;
+  const manifest = normalizedFields(manifestFields) as Array<Record<string, unknown>>;
+  const accountIndexes = new Map(accountFields.map((field, index) => [field.slug, index]));
+
+  for (const [index, manifestField] of manifestFields.entries()) {
+    const accountIndex = accountIndexes.get(manifestField.slug);
+    if (accountIndex === undefined) continue;
+
+    const accountField = accountFields[accountIndex];
+    const path = parent ? `${parent}.${manifestField.slug}` : manifestField.slug;
+
+    // Some Backstage API versions omit required metadata from AccountBlock fields.
+    // Treat an omitted value as unsupported, but report that the editor may not enforce it.
+    if (manifestField.required === true && !Object.hasOwn(accountField, "required")) {
+      delete account[accountIndex].required;
+      delete manifest[index].required;
+      warnings.add(`Backstage did not return required metadata for ${identity}.${path}; the account editor may not enforce this field as required.`);
+    }
+
+    const nested = comparableFields(
+      accountField.fields ?? [],
+      manifestField.fields ?? [],
+      identity,
+      warnings,
+      path,
+    );
+    account[accountIndex].fields = nested.account;
+    manifest[index].fields = nested.manifest;
+  }
+
+  return { account, manifest };
+}
+
+function matchesManifest(existing: AccountBlock, manifest: BlockManifest, warnings: Set<string>): boolean {
+  const fields = comparableFields(
+    existing.schema?.fields ?? [],
+    manifest.schema.fields,
+    manifest.registry_identity,
+    warnings,
+  );
+
   return existing.name === manifest.name
     && existing.slug === manifest.slug
     && (manifest.description === undefined || (existing.description ?? null) === manifest.description)
     && (existing.registry_identity ?? null) === manifest.registry_identity
     && (manifest.derived_from === undefined || (existing.derived_from ?? null) === manifest.derived_from)
-    && stableJson(normalizedFields(existing.schema?.fields ?? [])) === stableJson(normalizedFields(manifest.schema.fields));
+    && stableJson(fields.account) === stableJson(fields.manifest);
 }
 
 function planManifest(manifest: BlockManifest, blocks: AccountBlock[]) {
@@ -123,6 +171,8 @@ function planManifest(manifest: BlockManifest, blocks: AccountBlock[]) {
     );
   }
 
+  const warnings = new Set<string>();
+
   if (existing) {
     const extraFields = accountOnlyFields(manifest.schema.fields, existing.schema?.fields ?? []);
 
@@ -133,9 +183,11 @@ function planManifest(manifest: BlockManifest, blocks: AccountBlock[]) {
     }
   }
 
-  if (!existing) return { manifest, action: "create" as const };
-  if (matchesManifest(existing, manifest)) return { manifest, existing, action: "unchanged" as const };
-  return { manifest, existing, action: "update" as const };
+  if (!existing) return { manifest, action: "create" as const, warnings: [] };
+  if (matchesManifest(existing, manifest, warnings)) {
+    return { manifest, existing, action: "unchanged" as const, warnings: [...warnings] };
+  }
+  return { manifest, existing, action: "update" as const, warnings: [...warnings] };
 }
 
 function failureAfterPartialSync(manifest: BlockManifest, result: BlockManifestSyncResult, error: unknown): Error {
@@ -170,6 +222,7 @@ export async function syncBlockManifests(
   const blocks = await client.blocks.list();
   const planned = manifests.map((manifest) => planManifest(manifest, blocks));
   const result = { created: 0, updated: 0, unchanged: 0 };
+  const warnings = new Set(planned.flatMap((operation) => operation.warnings));
 
   for (const operation of planned) {
     const { manifest, existing, action } = operation;
@@ -187,13 +240,19 @@ export async function syncBlockManifests(
 
     try {
       if (action === "update" && existing) {
-        await client.blocks.update(existing.id, apiPayload(manifest));
+        const updated = await client.blocks.update(existing.id, apiPayload(manifest));
         result.updated += 1;
+        if (updated?.schema?.fields) {
+          comparableFields(updated.schema.fields, manifest.schema.fields, manifest.registry_identity, warnings);
+        }
         continue;
       }
 
-      await client.blocks.create(apiPayload(manifest));
+      const created = await client.blocks.create(apiPayload(manifest));
       result.created += 1;
+      if (created?.schema?.fields) {
+        comparableFields(created.schema.fields, manifest.schema.fields, manifest.registry_identity, warnings);
+      }
     } catch (error) {
       if (action !== "create" || statusOf(error) !== 409) {
         throw failureAfterPartialSync(manifest, result, error);
@@ -202,6 +261,7 @@ export async function syncBlockManifests(
       try {
         const refreshedBlocks = await client.blocks.list();
         const raced = planManifest(manifest, refreshedBlocks);
+        raced.warnings.forEach((warning) => warnings.add(warning));
 
         if (raced.action === "create") {
           throw new Error(`The create conflicted, but no matching Backstage block was found for ${manifest.registry_identity}.`);
@@ -216,13 +276,16 @@ export async function syncBlockManifests(
           throw new Error(`Backstage did not return the matching block for ${manifest.registry_identity}.`);
         }
 
-        await client.blocks.update(raced.existing.id, apiPayload(manifest));
+        const updated = await client.blocks.update(raced.existing.id, apiPayload(manifest));
         result.updated += 1;
+        if (updated?.schema?.fields) {
+          comparableFields(updated.schema.fields, manifest.schema.fields, manifest.registry_identity, warnings);
+        }
       } catch (raceError) {
         throw failureAfterPartialSync(manifest, result, raceError);
       }
     }
   }
 
-  return result;
+  return warnings.size > 0 ? { ...result, warnings: [...warnings] } : result;
 }

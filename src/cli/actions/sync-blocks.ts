@@ -28,6 +28,7 @@ export async function syncBlocks(config: BackstageUserConfig, options: BlockMani
     const result = await syncBlockManifests(client, manifests, options);
     const status = options.dryRun ? "Manifest sync preview" : "Manifest sync complete";
     console.log(`${status}: ${result.created} to create, ${result.updated} to update, ${result.unchanged} unchanged`);
+    for (const warning of result.warnings ?? []) console.warn(`Warning: ${warning}`);
   }
 
   if (!config.blocks || !config.blocks.length) return;

@@ -42,6 +42,7 @@ test("registry lists the site starter block contracts and reports unsupported ve
     "starter-astro:menu@1",
     "starter-astro:rich-text@1",
     "starter-astro:upcoming-events@1",
+    "starter-astro:video-hero@1",
   ]);
   assert.deepEqual(
     getRegistryBlock("starter-astro:hero@1").schema.fields.map(({ slug }) => slug),
@@ -50,6 +51,9 @@ test("registry lists the site starter block contracts and reports unsupported ve
   assert.equal(getRegistryBlock("backstage:hero@1").registry_identity, "backstage:hero@1");
   assert.equal(searchRegistryBlocks("public Instagram posts").length, 1);
   assert.equal(getRegistryBlock("starter-astro:menu@1").schema.fields[0].type, "menu_select");
+  const contactForm = getRegistryBlock("starter-astro:contact-form@1");
+  assert.equal(contactForm.schema.fields.find(({ slug }) => slug === "form_id")?.type, "form_select");
+  assert.equal(contactForm.schema.fields.find(({ slug }) => slug === "form_id")?.required, true);
   assert.deepEqual(
     getRegistryBlock("starter-astro:call-to-action@1").schema.fields.find(({ slug }) => slug === "actions")?.fields.map(({ slug }) => slug),
     ["label", "href"],
@@ -67,6 +71,10 @@ test("registry lists the site starter block contracts and reports unsupported ve
     ["link_label", true],
   ]);
   assert.equal(getRegistryBlock("starter-astro:upcoming-events@1").schema.fields.at(-1)?.slug, "view_all_label");
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:video-hero@1").schema.fields.map(({ slug }) => slug),
+    ["eyebrow", "heading", "body", "video", "poster", "actions"],
+  );
   assert.throws(() => getRegistryBlock("starter-astro:hero@2"), /Unsupported version/);
   assert.throws(() => getRegistryBlock("backstage:missing@1"), /not available/);
 });
@@ -158,6 +166,11 @@ test("CLI installs without overwriting, forks with provenance, and validates man
   assert.equal(menuInstall.status, 0, menuInstall.stderr);
   assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "menu", "manifest.json"), "utf8")).schema.fields[0].type, "menu_select");
 
+  const videoHeroInstall = runCli(["block", "install", "starter-astro:video-hero@1"], cwd);
+  assert.equal(videoHeroInstall.status, 0, videoHeroInstall.stderr);
+  assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "video-hero", "manifest.json"), "utf8")).schema.fields[3].type, "media");
+  assert.match(await readFile(join(cwd, "blocks", "video-hero", "VideoHero.astro"), "utf8"), /VideoHeroBlock/);
+
   const repeatedInstall = runCli(["block", "install", "starter-astro:hero@1"], cwd);
   assert.notEqual(repeatedInstall.status, 0);
   assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).registry_identity, "starter-astro:hero@1");
@@ -170,7 +183,7 @@ test("CLI installs without overwriting, forks with provenance, and validates man
 
   const validation = runCli(["block", "validate"], cwd);
   assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.stdout, /Validated 4 block manifest/);
+  assert.match(validation.stdout, /Validated 5 block manifest/);
 
   const unsupported = runCli(["block", "install", "starter-astro:hero@2"], cwd);
   assert.notEqual(unsupported.status, 0);
@@ -254,6 +267,49 @@ test("dry-run plans manifest changes without creating or updating account blocks
     unchanged: 0,
   });
   assert.deepEqual(writes, []);
+});
+
+test("sync reports omitted required metadata and does not repeat writes for unsupported fields", async () => {
+  const manifest = getRegistryBlock("starter-astro:call-to-action@1");
+  const remote = {
+    id: "cta-id",
+    ...structuredClone(manifest),
+    name: "Legacy Call to Action",
+  };
+  let updates = 0;
+
+  const withoutRequired = (fields) => fields.map(({ fields: nested, ...field }) => {
+    const copy = { ...field };
+    delete copy.required;
+    return { ...copy, fields: withoutRequired(nested ?? []) };
+  });
+
+  const client = {
+    blocks: {
+      async list() { return [structuredClone(remote)]; },
+      async create() { throw new Error("should not create"); },
+      async update(id, payload) {
+        updates += 1;
+        Object.assign(remote, payload);
+        remote.schema = { fields: withoutRequired(payload.schema.fields) };
+        return structuredClone(remote);
+      },
+    },
+  };
+
+  const first = await syncBlockManifests(client, [manifest]);
+  assert.equal(first.updated, 1);
+  assert.equal(first.warnings?.some((warning) => warning.includes("actions.label")), true);
+  assert.equal(first.warnings?.some((warning) => warning.includes("actions.href")), true);
+
+  const second = await syncBlockManifests(client, [manifest]);
+  assert.deepEqual(second, {
+    created: 0,
+    updated: 0,
+    unchanged: 1,
+    warnings: first.warnings,
+  });
+  assert.equal(updates, 1);
 });
 
 test("manifest collisions are all detected before the first account write", async () => {
