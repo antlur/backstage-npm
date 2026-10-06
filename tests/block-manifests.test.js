@@ -41,6 +41,7 @@ test("registry lists the site starter block contracts and reports unsupported ve
     "starter-astro:menu@1",
     "starter-astro:rich-text@1",
     "starter-astro:upcoming-events@1",
+    "starter-astro:video-hero@1",
   ]);
   assert.deepEqual(
     getRegistryBlock("starter-astro:hero@1").schema.fields.map(({ slug }) => slug),
@@ -58,6 +59,10 @@ test("registry lists the site starter block contracts and reports unsupported ve
     ["cover", "contain"],
   );
   assert.equal(getRegistryBlock("starter-astro:upcoming-events@1").schema.fields.at(-1)?.slug, "view_all_label");
+  assert.deepEqual(
+    getRegistryBlock("starter-astro:video-hero@1").schema.fields.map(({ slug }) => slug),
+    ["eyebrow", "heading", "body", "video", "poster", "actions"],
+  );
   assert.throws(() => getRegistryBlock("starter-astro:hero@2"), /Unsupported version/);
   assert.throws(() => getRegistryBlock("backstage:missing@1"), /not available/);
 });
@@ -149,6 +154,11 @@ test("CLI installs without overwriting, forks with provenance, and validates man
   assert.equal(menuInstall.status, 0, menuInstall.stderr);
   assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "menu", "manifest.json"), "utf8")).schema.fields[0].type, "menu_select");
 
+  const videoHeroInstall = runCli(["block", "install", "starter-astro:video-hero@1"], cwd);
+  assert.equal(videoHeroInstall.status, 0, videoHeroInstall.stderr);
+  assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "video-hero", "manifest.json"), "utf8")).schema.fields[3].type, "media");
+  assert.match(await readFile(join(cwd, "blocks", "video-hero", "VideoHero.astro"), "utf8"), /VideoHeroBlock/);
+
   const repeatedInstall = runCli(["block", "install", "starter-astro:hero@1"], cwd);
   assert.notEqual(repeatedInstall.status, 0);
   assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).registry_identity, "starter-astro:hero@1");
@@ -161,7 +171,7 @@ test("CLI installs without overwriting, forks with provenance, and validates man
 
   const validation = runCli(["block", "validate"], cwd);
   assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.stdout, /Validated 4 block manifest/);
+  assert.match(validation.stdout, /Validated 5 block manifest/);
 
   const unsupported = runCli(["block", "install", "starter-astro:hero@2"], cwd);
   assert.notEqual(unsupported.status, 0);
