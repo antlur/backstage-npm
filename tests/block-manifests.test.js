@@ -257,6 +257,49 @@ test("dry-run plans manifest changes without creating or updating account blocks
   assert.deepEqual(writes, []);
 });
 
+test("sync reports omitted required metadata and does not repeat writes for unsupported fields", async () => {
+  const manifest = getRegistryBlock("starter-astro:call-to-action@1");
+  const remote = {
+    id: "cta-id",
+    ...structuredClone(manifest),
+    name: "Legacy Call to Action",
+  };
+  let updates = 0;
+
+  const withoutRequired = (fields) => fields.map(({ fields: nested, ...field }) => {
+    const copy = { ...field };
+    delete copy.required;
+    return { ...copy, fields: withoutRequired(nested ?? []) };
+  });
+
+  const client = {
+    blocks: {
+      async list() { return [structuredClone(remote)]; },
+      async create() { throw new Error("should not create"); },
+      async update(id, payload) {
+        updates += 1;
+        Object.assign(remote, payload);
+        remote.schema = { fields: withoutRequired(payload.schema.fields) };
+        return structuredClone(remote);
+      },
+    },
+  };
+
+  const first = await syncBlockManifests(client, [manifest]);
+  assert.equal(first.updated, 1);
+  assert.equal(first.warnings?.some((warning) => warning.includes("actions.label")), true);
+  assert.equal(first.warnings?.some((warning) => warning.includes("actions.href")), true);
+
+  const second = await syncBlockManifests(client, [manifest]);
+  assert.deepEqual(second, {
+    created: 0,
+    updated: 0,
+    unchanged: 1,
+    warnings: first.warnings,
+  });
+  assert.equal(updates, 1);
+});
+
 test("manifest collisions are all detected before the first account write", async () => {
   const hero = getRegistryBlock("backstage:hero@1");
   const first = validateBlockManifest({
