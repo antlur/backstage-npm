@@ -3,6 +3,7 @@ export type AccountModuleKey =
   | "core.media"
   | "core.change_management"
   | "core.deployments"
+  | "core.accessibility"
   | "cms.site_builder"
   | "cms.custom_blocks"
   | "cms.custom_layouts"
@@ -29,6 +30,7 @@ export const AccountModules = {
   CoreMedia: "core.media",
   CoreChangeManagement: "core.change_management",
   CoreDeployments: "core.deployments",
+  CoreAccessibility: "core.accessibility",
   CmsSiteBuilder: "cms.site_builder",
   CmsCustomBlocks: "cms.custom_blocks",
   CmsCustomLayouts: "cms.custom_layouts",
