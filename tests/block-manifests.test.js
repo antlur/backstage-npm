@@ -374,6 +374,64 @@ test("dry-run plans manifest changes without creating or updating account blocks
   assert.deepEqual(writes, []);
 });
 
+test("explicit adoption updates only an unregistered matching slug and supports dry-run", async () => {
+  const manifest = getRegistryBlock("backstage:hero@1");
+  const legacy = {
+    id: "legacy-hero-id",
+    name: "Legacy Hero",
+    slug: manifest.slug,
+    registry_identity: null,
+    schema: structuredClone(manifest.schema),
+  };
+  const writes = [];
+  const client = {
+    blocks: {
+      async list() { return [structuredClone(legacy)]; },
+      async create() { throw new Error("adoption should not create a second block"); },
+      async update(id, payload) {
+        writes.push({ id, payload });
+        return { id, ...payload };
+      },
+    },
+  };
+  const options = { adoptUnregisteredSlugs: [manifest.slug] };
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest], { ...options, dryRun: true }), {
+    created: 0,
+    updated: 1,
+    unchanged: 0,
+  });
+  assert.deepEqual(writes, []);
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest], options), {
+    created: 0,
+    updated: 1,
+    unchanged: 0,
+  });
+  assert.equal(writes[0].id, legacy.id);
+  assert.equal(writes[0].payload.registry_identity, manifest.registry_identity);
+});
+
+test("explicit adoption never updates a slug registered to a different identity", async () => {
+  const manifest = getRegistryBlock("backstage:hero@1");
+  let updated = false;
+  const client = {
+    blocks: {
+      async list() {
+        return [{ id: "owned-hero-id", slug: manifest.slug, registry_identity: "another-site:hero@1" }];
+      },
+      async create() { throw new Error("must not create over a registered slug"); },
+      async update() { updated = true; },
+    },
+  };
+
+  await assert.rejects(
+    () => syncBlockManifests(client, [manifest], { adoptUnregisteredSlugs: [manifest.slug] }),
+    /already owned by another-site:hero@1/,
+  );
+  assert.equal(updated, false);
+});
+
 test("sync reports omitted required metadata and does not repeat writes for unsupported fields", async () => {
   const manifest = getRegistryBlock("starter-astro:call-to-action@1");
   const remote = {

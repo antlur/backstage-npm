@@ -15,6 +15,7 @@ export interface BlockManifestSyncResult {
 
 export interface BlockManifestSyncOptions {
   dryRun?: boolean;
+  adoptUnregisteredSlugs?: readonly string[];
 }
 
 function apiPayload(manifest: BlockManifest) {
@@ -38,18 +39,40 @@ function findSingleIdentityMatch(blocks: AccountBlock[], identity: string): Acco
   return matches[0];
 }
 
-function assertSlugAvailable(
-  blocks: Awaited<ReturnType<BlockSyncClient["blocks"]["list"]>>,
-  slug: string,
-  identity: string,
-  matchingId?: string,
-): void {
-  const collision = blocks.find((block) => block.slug === slug && block.id !== matchingId);
+function validateFieldMetadata(fields: readonly Field[], blockSlug: string, parent = "schema.fields"): void {
+  for (const field of fields) {
+    const path = `${parent}.${field.slug}`;
 
-  if (collision) {
-    throw new Error(
-      `Cannot sync ${identity}: Backstage block slug "${slug}" is already owned by ${collision.registry_identity ?? `unregistered block ${collision.id}`}. Resolve the slug conflict explicitly.`,
-    );
+    if (field.is_multiple !== undefined && typeof field.is_multiple !== "boolean") {
+      throw new Error(`Block manifest "${blockSlug}" has an invalid multiple-value setting for "${field.slug}".`);
+    }
+
+    if (field.is_primary !== undefined && typeof field.is_primary !== "boolean") {
+      throw new Error(`Block manifest "${blockSlug}" has an invalid primary-field setting for "${field.slug}".`);
+    }
+
+    if (field.show_in_list !== undefined && typeof field.show_in_list !== "boolean") {
+      throw new Error(`Block manifest "${blockSlug}" has an invalid list-visibility setting for "${field.slug}".`);
+    }
+
+    const allowedReferences: unknown = field.allowed_references;
+    if (allowedReferences !== undefined && (!Array.isArray(allowedReferences)
+      || allowedReferences.some((reference) => typeof reference !== "string"))) {
+      throw new Error(`Block manifest "${blockSlug}" has invalid reference targets for "${field.slug}".`);
+    }
+
+    const options: unknown = field.options;
+    if (options !== undefined && (!Array.isArray(options)
+      || options.some((option) => typeof option !== "object"
+        || option === null
+        || Array.isArray(option)
+        || typeof option.label !== "string"
+        || option.label.trim() === ""
+        || !Object.hasOwn(option, "value")))) {
+      throw new Error(`Block manifest "${blockSlug}" has invalid options for "${field.slug}".`);
+    }
+
+    validateFieldMetadata(field.fields ?? [], blockSlug, `${path}.fields`);
   }
 }
 
@@ -161,14 +184,30 @@ function matchesManifest(existing: AccountBlock, manifest: BlockManifest, warnin
     && stableJson(fields.account) === stableJson(fields.manifest);
 }
 
-function planManifest(manifest: BlockManifest, blocks: AccountBlock[]) {
-  const existing = findSingleIdentityMatch(blocks, manifest.registry_identity);
-  assertSlugAvailable(blocks, manifest.slug, manifest.registry_identity, existing?.id);
+function planManifest(manifest: BlockManifest, blocks: AccountBlock[], adoptUnregisteredSlugs: ReadonlySet<string>) {
+  let existing = findSingleIdentityMatch(blocks, manifest.registry_identity);
 
   if (existing && existing.slug !== manifest.slug) {
     throw new Error(
-      `Cannot change the slug for ${manifest.registry_identity} from "${existing.slug}" to "${manifest.slug}" during sync because authored pages may refer to it. Migrate slug references explicitly.`,
+      `Cannot rename "${manifest.registry_identity}" from "${existing.slug}" to "${manifest.slug}"; authored pages may refer to it by slug.`,
     );
+  }
+
+  const slugMatches = blocks.filter((block) => block.slug === manifest.slug && block.id !== existing?.id);
+  if (slugMatches.length > 1) {
+    throw new Error(`Backstage returned multiple blocks with slug "${manifest.slug}"; refusing to choose one.`);
+  }
+
+  const slugOwner = slugMatches[0];
+  if (slugOwner) {
+    if (!existing && slugOwner.registry_identity == null && adoptUnregisteredSlugs.has(manifest.slug)) {
+      existing = slugOwner;
+    } else {
+      const owner = slugOwner.registry_identity ?? `unregistered block ${slugOwner.id}`;
+      throw new Error(
+        `Slug "${manifest.slug}" is already owned by ${owner}. Refusing to overwrite it.`,
+      );
+    }
   }
 
   const warnings = new Set<string>();
@@ -190,19 +229,7 @@ function planManifest(manifest: BlockManifest, blocks: AccountBlock[]) {
   return { manifest, existing, action: "update" as const, warnings: [...warnings] };
 }
 
-function failureAfterPartialSync(manifest: BlockManifest, result: BlockManifestSyncResult, error: unknown): Error {
-  const detail = error instanceof Error ? error.message : String(error);
-  return new Error(
-    `Block sync stopped at ${manifest.registry_identity} after ${result.created} created, ${result.updated} updated, and ${result.unchanged} unchanged. ${detail}`,
-    { cause: error },
-  );
-}
-
-export async function syncBlockManifests(
-  client: BlockSyncClient,
-  values: readonly unknown[],
-  options: BlockManifestSyncOptions = {},
-): Promise<BlockManifestSyncResult> {
+export function validateBlockManifests(values: readonly unknown[]): BlockManifest[] {
   const manifests = values.map(validateBlockManifest);
   const identities = new Set<string>();
   const slugs = new Set<string>();
@@ -217,10 +244,37 @@ export async function syncBlockManifests(
       throw new Error(`Multiple local manifests use slug "${manifest.slug}".`);
     }
     slugs.add(manifest.slug);
+    validateFieldMetadata(manifest.schema.fields, manifest.slug);
+  }
+
+  return manifests;
+}
+
+function failureAfterPartialSync(manifest: BlockManifest, result: BlockManifestSyncResult, error: unknown): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  return new Error(
+    `Block sync stopped at ${manifest.registry_identity} after ${result.created} created, ${result.updated} updated, and ${result.unchanged} unchanged. ${detail}`,
+    { cause: error },
+  );
+}
+
+export async function syncBlockManifests(
+  client: BlockSyncClient,
+  values: readonly unknown[],
+  options: BlockManifestSyncOptions = {},
+): Promise<BlockManifestSyncResult> {
+  const manifests = validateBlockManifests(values);
+  const adoptUnregisteredSlugs = new Set(options.adoptUnregisteredSlugs ?? []);
+  const manifestSlugs = new Set(manifests.map((manifest) => manifest.slug));
+
+  for (const slug of adoptUnregisteredSlugs) {
+    if (!manifestSlugs.has(slug)) {
+      throw new Error(`Cannot adopt "${slug}" because no local block manifest uses that slug.`);
+    }
   }
 
   const blocks = await client.blocks.list();
-  const planned = manifests.map((manifest) => planManifest(manifest, blocks));
+  const planned = manifests.map((manifest) => planManifest(manifest, blocks, adoptUnregisteredSlugs));
   const result = { created: 0, updated: 0, unchanged: 0 };
   const warnings = new Set(planned.flatMap((operation) => operation.warnings));
 
@@ -260,7 +314,7 @@ export async function syncBlockManifests(
 
       try {
         const refreshedBlocks = await client.blocks.list();
-        const raced = planManifest(manifest, refreshedBlocks);
+        const raced = planManifest(manifest, refreshedBlocks, adoptUnregisteredSlugs);
         raced.warnings.forEach((warning) => warnings.add(warning));
 
         if (raced.action === "create") {
