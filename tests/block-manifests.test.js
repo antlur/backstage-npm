@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +15,7 @@ import {
   validateBlockManifest,
   BackstageClient,
 } from "../dist/index.js";
+import { syncBlocks } from "../dist/cli/actions/sync-blocks.js";
 
 const cliPath = fileURLToPath(new URL("../dist/cli/cli.js", import.meta.url));
 
@@ -202,6 +203,110 @@ test("CLI installs without overwriting, forks with provenance, and validates man
   const invalid = runCli(["block", "validate", invalidPath], cwd);
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /Invalid block identity/);
+});
+
+test("CLI uses the root config and configured block directory, with legacy config fallback", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "backstage-config-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+
+  await mkdir(join(cwd, "src/blocks/hero"), { recursive: true });
+  await writeFile(
+    join(cwd, "src/blocks/hero/manifest.json"),
+    JSON.stringify(getRegistryBlock("starter-astro:hero@1")),
+  );
+  await writeFile(
+    join(cwd, "backstage.config.ts"),
+    'export default { blockManifestDirectory: "src/blocks" };\n',
+  );
+
+  const rootConfigValidation = runCli(["block", "validate"], cwd);
+  assert.equal(rootConfigValidation.status, 0, rootConfigValidation.stderr);
+  assert.match(rootConfigValidation.stdout, /Validated 1 block manifest/);
+
+  const install = runCli(["block", "install", "starter-astro:video-hero@1"], cwd);
+  assert.equal(install.status, 0, install.stderr);
+  assert.match(install.stdout, /src\/blocks\/video-hero/);
+  assert.equal(
+    JSON.parse(await readFile(join(cwd, "src/blocks/video-hero/manifest.json"), "utf8")).registry_identity,
+    "starter-astro:video-hero@1",
+  );
+
+  const fork = runCli(["block", "fork", "starter-astro:hero@1", "--namespace", "site"], cwd);
+  assert.equal(fork.status, 0, fork.stderr);
+  assert.equal(
+    JSON.parse(await readFile(join(cwd, "src/blocks/site-hero/manifest.json"), "utf8")).derived_from,
+    "starter-astro:hero@1",
+  );
+
+  await mkdir(join(cwd, "backstage"), { recursive: true });
+  await mkdir(join(cwd, "legacy-blocks/legacy"), { recursive: true });
+  await writeFile(
+    join(cwd, "backstage/config.ts"),
+    'export default { blockManifestDirectory: "legacy-blocks" };\n',
+  );
+  await writeFile(
+    join(cwd, "legacy-blocks/legacy/manifest.json"),
+    JSON.stringify(getRegistryBlock("starter-astro:contact-form@1")),
+  );
+
+  const rootTakesPrecedence = runCli(["block", "validate"], cwd);
+  assert.equal(rootTakesPrecedence.status, 0, rootTakesPrecedence.stderr);
+  assert.match(rootTakesPrecedence.stderr, /using backstage\.config\.ts/);
+  assert.match(rootTakesPrecedence.stdout, /Validated 3 block manifest/);
+
+  const legacyCwd = await mkdtemp(join(tmpdir(), "backstage-legacy-config-"));
+  t.after(() => rm(legacyCwd, { recursive: true, force: true }));
+  await mkdir(join(legacyCwd, "backstage"), { recursive: true });
+  await mkdir(join(legacyCwd, "custom-blocks/hero"), { recursive: true });
+  await writeFile(
+    join(legacyCwd, "backstage/config.ts"),
+    'export default { blockManifestDirectory: "custom-blocks" };\n',
+  );
+  await writeFile(
+    join(legacyCwd, "custom-blocks/hero/manifest.json"),
+    JSON.stringify(getRegistryBlock("starter-astro:hero@1")),
+  );
+
+  const legacyValidation = runCli(["block", "validate"], legacyCwd);
+  assert.equal(legacyValidation.status, 0, legacyValidation.stderr);
+  assert.match(legacyValidation.stdout, /Validated 1 block manifest/);
+});
+
+test("sync blocks reads the configured manifest directory in dry-run mode", async (t) => {
+  const cwd = await mkdtemp(join(tmpdir(), "backstage-sync-config-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  const manifestsDirectory = join(cwd, "src/blocks");
+  await mkdir(join(manifestsDirectory, "hero"), { recursive: true });
+  await writeFile(
+    join(manifestsDirectory, "hero/manifest.json"),
+    JSON.stringify(getRegistryBlock("starter-astro:hero@1")),
+  );
+
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options });
+    return {
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      async json() { return { data: [] }; },
+    };
+  };
+
+  try {
+    await syncBlocks({
+      accountId: "account-id",
+      baseURL: "https://example.test/api",
+      token: "api-token",
+      blockManifestDirectory: manifestsDirectory,
+    }, { dryRun: true });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, "https://example.test/api/blocks");
+    assert.equal(calls[0].options.method, "GET");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("sync creates and updates only definitions by immutable registry identity", async () => {

@@ -24,16 +24,16 @@ program
 program
   .command("sync [type]")
   .description("Sync blocks, blueprints, and layouts with the Backstage CMS")
-  .option("--dry-run", "Preview versioned block manifest changes without writing (use with sync blocks)")
+  .option("--dry-run", "Preview block manifest or layout changes without writing (use with sync blocks or layouts)")
   .action(async (type = "all", options) => {
-    if (options.dryRun && type !== "blocks") {
-      throw new Error("--dry-run is supported only with 'backstage sync blocks'.");
+    if (options.dryRun && type !== "blocks" && type !== "layouts") {
+      throw new Error("--dry-run is supported only with 'backstage sync blocks' or 'backstage sync layouts'.");
     }
 
     const backstageConfig = await loadBackstageConfig();
 
     if (!backstageConfig) {
-      console.error("Failed to load backstage/config.ts");
+      console.error("No Backstage config found. Add backstage.config.ts (or the legacy backstage/config.ts).");
       process.exitCode = 1;
       return;
     }
@@ -49,7 +49,7 @@ program
     }
 
     if (type === "layouts") {
-      await syncLayouts(backstageConfig);
+      await syncLayouts(backstageConfig, { dryRun: options.dryRun });
       return;
     }
 
@@ -80,7 +80,8 @@ blocks
   .command("install <identity>")
   .description("Install a registry block manifest and Astro renderer scaffold")
   .action(async (identity) => {
-    const directory = await installBlock(identity);
+    const config = await loadBackstageConfig();
+    const directory = await installBlock(identity, process.cwd(), config?.blockManifestDirectory);
     console.log(`Installed ${identity} in ${directory}`);
   });
 
@@ -89,14 +90,16 @@ blocks.command("fork <identity>")
   .requiredOption("--namespace <namespace>", "Site or project namespace")
   .option("--slug <slug>", "Local Backstage slug (defaults to <namespace>-<key>)")
   .action(async (identity, options) => {
-    const directory = await forkBlock(identity, options.namespace, options.slug);
+    const config = await loadBackstageConfig();
+    const directory = await forkBlock(identity, options.namespace, options.slug, process.cwd(), config?.blockManifestDirectory);
     console.log(`Forked ${identity} into ${directory}`);
   });
 
 blocks.command("validate [path]")
   .description("Validate one manifest file or all manifests under a directory")
   .action(async (path) => {
-    const identities = await validateManifestPath(path);
+    const config = path === undefined ? await loadBackstageConfig() : null;
+    const identities = await validateManifestPath(path ?? config?.blockManifestDirectory);
     for (const identity of identities) console.log(`Valid: ${identity}`);
     console.log(`Validated ${identities.length} block manifest(s).`);
   });
