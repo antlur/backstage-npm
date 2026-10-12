@@ -82,7 +82,10 @@ function stableJson(value: unknown): string {
 
 function normalizedFields(fields: readonly Field[]): Array<Record<string, unknown>> {
   return fields.map((field) => {
-    const { type_id: _typeId, fields: nestedFields, ...portable } = field as Field & { type_id?: string | null };
+    const { id: _id, type_id: _typeId, fields: nestedFields, ...portable } = field as Field & {
+      id?: string | null;
+      type_id?: string | null;
+    };
     return {
       ...portable,
       description: field.description ?? null,

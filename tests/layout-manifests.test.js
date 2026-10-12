@@ -199,6 +199,81 @@ test("layout sync leaves unchanged schemas alone when the API omits unsupported 
   assert.match(warnings.join("\n"), /may not enforce this field as required/);
 });
 
+test("layout sync ignores Backstage-generated nested field IDs across repeated syncs", async (t) => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  const local = {
+    name: "Action Layout",
+    slug: "action-layout",
+    schema: { fields: [{
+      name: "Actions",
+      slug: "actions",
+      type: "fieldset",
+      fields: [{ name: "Label", slug: "label", type: "text" }],
+    }] },
+  };
+  const remoteSchema = structuredClone(local.schema);
+  remoteSchema.fields[0].fields[0].id = "backstage-generated-field-id";
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options });
+    return response(200, { data: [{
+      id: "account-layout-id",
+      name: local.name,
+      slug: local.slug,
+      schema: remoteSchema,
+    }] });
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  const first = await syncLayouts(clientConfig([local]));
+  const second = await syncLayouts(clientConfig([local]));
+
+  assert.deepEqual(first, { created: 0, updated: 0, unchanged: 1 });
+  assert.deepEqual(second, { created: 0, updated: 0, unchanged: 1 });
+  assert.deepEqual(calls.map(({ options }) => options.method), ["GET", "GET"]);
+});
+
+test("layout sync still updates meaningful schema changes without normalizing the request payload", async (t) => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  const local = {
+    name: "Action Layout",
+    slug: "action-layout",
+    schema: { fields: [{
+      name: "Actions",
+      slug: "actions",
+      type: "fieldset",
+      fields: [{ id: "preserved-field-id", name: "Label", slug: "label", type: "text", description: "Button label" }],
+    }] },
+  };
+  const remoteSchema = structuredClone(local.schema);
+  remoteSchema.fields[0].fields[0].id = "backstage-generated-field-id";
+  remoteSchema.fields[0].fields[0].description = "Old description";
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url, options });
+    if (options.method === "GET") {
+      return response(200, { data: [{
+        id: "account-layout-id",
+        name: local.name,
+        slug: local.slug,
+        schema: remoteSchema,
+      }] });
+    }
+    return response(200, { data: { id: "account-layout-id" } });
+  };
+  t.after(() => { globalThis.fetch = originalFetch; });
+
+  const result = await syncLayouts(clientConfig([local]));
+
+  assert.deepEqual(result, { created: 0, updated: 1, unchanged: 0 });
+  assert.deepEqual(calls.map(({ options }) => options.method), ["GET", "PUT"]);
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    name: local.name,
+    slug: local.slug,
+    schema: local.schema,
+  });
+});
+
 test("layout sync rejects account-only nested fields before any layout writes", async (t) => {
   const originalFetch = globalThis.fetch;
   const calls = [];
