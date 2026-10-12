@@ -1,13 +1,14 @@
 import { BackstageClient, defineConfig } from "@antlur/backstage";
 import { PageService } from "@antlur/backstage/endpoints/pages";
 import type { BackstageUserConfig } from "@antlur/backstage/config";
-import type { AccountBlock, HeadlessPageBlock, PageBlocksWriteInput } from "@antlur/backstage";
+import type { AccountBlock, HeadlessPageBlock, LayoutConfigDefinition, PageBlocksWriteInput } from "@antlur/backstage";
 import type { ResolvedRoute } from "@antlur/backstage/types";
 
 const config: BackstageUserConfig = defineConfig({
   accountId: "account-id",
   baseURL: "https://example.com/api",
   token: "api-token",
+  blockManifestDirectory: "src/blocks",
 });
 const client = new BackstageClient(config);
 const pages = new PageService(client);
@@ -33,3 +34,13 @@ const invalidWriteBlocks: PageBlocksWriteInput = { blocks: [headlessResponseBloc
 void invalidWriteBlocks;
 void (null as unknown as AccountBlockId);
 void (null as unknown as ResolvedRoutePath);
+const pageLayout: LayoutConfigDefinition = {
+  manifest_version: 1,
+  type: "layout",
+  name: "Standard Page",
+  slug: "standard-page",
+  schema: { fields: [] },
+};
+void defineConfig({ layouts: [pageLayout] });
+void defineConfig({ layouts: [{ name: "Legacy Inline", slug: "legacy-inline", schema: { fields: [] } }] });
+void defineConfig({ layouts: [{ name: "Extended Inline", slug: "extended-inline", schema: { fields: [] }, description: "Existing config metadata" }] });

@@ -5,10 +5,10 @@ import { loadBlockManifests } from "./block-manifests.js";
 
 export async function syncBlocks(config: BackstageUserConfig, options: BlockManifestSyncOptions = {}) {
   const client = new BackstageClient(config);
-  const manifests = await loadBlockManifests();
+  const manifests = await loadBlockManifests(config.blockManifestDirectory);
 
   if (options.dryRun && config.blocks?.length) {
-    throw new Error("--dry-run supports versioned block manifests only; legacy backstage/config.ts blocks are not previewable.");
+    throw new Error("--dry-run supports versioned block manifests only; inline config blocks are not previewable.");
   }
 
   if ((!config.blocks || !config.blocks.length) && manifests.length === 0) {
@@ -21,7 +21,7 @@ export async function syncBlocks(config: BackstageUserConfig, options: BlockMani
   const conflictingSlug = [...configuredSlugs].find((slug) => manifestSlugs.has(slug));
 
   if (conflictingSlug) {
-    throw new Error(`Both backstage/config.ts and a block manifest define slug "${conflictingSlug}". Keep one definition source per slug.`);
+    throw new Error(`Inline config blocks and a block manifest both define slug "${conflictingSlug}". Keep one definition source per slug.`);
   }
 
   if (manifests.length > 0) {

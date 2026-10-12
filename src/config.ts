@@ -1,4 +1,5 @@
 import type { BlockDefinition } from "./studio/types/index.js";
+import type { LayoutConfigDefinition } from "./layouts/manifest.js";
 
 const DEFAULT_BASE_URL = "https://bckstg.app/api";
 
@@ -29,9 +30,10 @@ export interface BackstageUserConfig {
   accountId?: string | undefined;
   token?: string | undefined;
   baseURL?: string;
+  blockManifestDirectory?: string;
   blocks?: BlockDefinition<any>[] | undefined;
   blueprints?: BlueprintDefinition[] | undefined;
-  layouts?: any[] | undefined;
+  layouts?: LayoutConfigDefinition[] | undefined;
   onError?: (error: Error) => void;
 }
 

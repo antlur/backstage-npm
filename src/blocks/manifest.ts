@@ -1,4 +1,5 @@
 import type { Field } from "../studio/types/field.js";
+import { validateManifestFields } from "../manifest/fields.js";
 
 export type BlockIdentity = `${string}:${string}@${number}`;
 
@@ -14,40 +15,6 @@ export interface BlockManifest {
 }
 
 const BLOCK_IDENTITY_PATTERN = /^([a-z][a-z0-9-]*):([a-z][a-z0-9-]*)@([1-9][0-9]*)$/;
-const FIELD_SLUG_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
-
-const FIELD_TYPES = new Set([
-  "boolean",
-  "date",
-  "datetime",
-  "email",
-  "event_select",
-  "fieldset",
-  "form_select",
-  "image",
-  "image_list",
-  "json",
-  "list_array",
-  "location",
-  "markdown",
-  "media",
-  "menu_select",
-  "number",
-  "press_select",
-  "reference",
-  "repeater",
-  "rich_text",
-  "select",
-  "separator",
-  "slug",
-  "spacer",
-  "text",
-  "textarea",
-  "time",
-  "url",
-  "navigation_select",
-  "page_select",
-]);
 
 export interface BlockIdentityParts {
   namespace: string;
@@ -81,46 +48,6 @@ function requiredString(value: unknown, path: string): string {
   return value;
 }
 
-function validateFields(value: unknown, path: string): asserts value is Field[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${path} must be an array`);
-  }
-
-  const seenSlugs = new Set<string>();
-
-  value.forEach((field, index) => {
-    const fieldPath = `${path}.${index}`;
-
-    if (!isRecord(field)) {
-      throw new Error(`${fieldPath} must be an object`);
-    }
-
-    requiredString(field.name, `${fieldPath}.name`);
-    const slug = requiredString(field.slug, `${fieldPath}.slug`);
-
-    if (!FIELD_SLUG_PATTERN.test(slug)) {
-      throw new Error(`${fieldPath}.slug must contain only letters, numbers, underscores, or hyphens and start with a letter`);
-    }
-
-    if (seenSlugs.has(slug)) {
-      throw new Error(`${fieldPath}.slug duplicates "${slug}" in ${path}`);
-    }
-    seenSlugs.add(slug);
-
-    if (typeof field.type !== "string" || !FIELD_TYPES.has(field.type)) {
-      throw new Error(`${fieldPath}.type is not a supported Backstage field type`);
-    }
-
-    if (field.fields !== undefined) {
-      validateFields(field.fields, `${fieldPath}.fields`);
-    }
-
-    if (field.required !== undefined && typeof field.required !== "boolean") {
-      throw new Error(`${fieldPath}.required must be a boolean`);
-    }
-  });
-}
-
 export function parseBlockManifest(value: unknown): BlockManifest {
   if (!isRecord(value)) {
     throw new Error("Block manifest must be a JSON object");
@@ -144,7 +71,7 @@ export function parseBlockManifest(value: unknown): BlockManifest {
     throw new Error("schema must be an object");
   }
 
-  validateFields(value.schema.fields, "schema.fields");
+  validateManifestFields(value.schema.fields);
 
   if (value.description !== undefined && typeof value.description !== "string") {
     throw new Error("description must be a string when provided");

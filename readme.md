@@ -366,7 +366,11 @@ When defining fields for blocks and blueprints, you can set various options to c
 
 Sync your blocks, blueprints, and layouts to Backstage CMS:
 
-Preview versioned block-manifest changes without writing with `npx backstage sync blocks --dry-run`. This validates local manifests and account slug/schema safety before reporting planned creates, updates, and unchanged blocks. Legacy `backstage/config.ts` blocks are not previewable. If the Backstage API omits schema metadata such as a field's `required` flag, sync reports that limitation and avoids repeating writes for metadata the API does not return; the CMS editor may not enforce that setting.
+The CLI loads `backstage.config.ts` from the project root. Existing projects may keep using `backstage/config.ts`; the root file takes precedence when both exist. Set `blockManifestDirectory` to the directory containing per-block manifest folders when it is not the default `blocks/` directory. Sync, validate, install, and fork use this configured path.
+
+Preview versioned block-manifest changes without writing with `npx backstage sync blocks --dry-run`. This validates local manifests and account slug/schema safety before reporting planned creates, updates, and unchanged blocks. Inline `blocks` in config are not previewable. If the Backstage API omits schema metadata such as a field's `required` flag, sync reports that limitation and avoids repeating writes for metadata the API does not return; the CMS editor may not enforce that setting.
+
+Preview configured layouts with `npx backstage sync layouts --dry-run`. Layout preview reads account layouts, compares schemas, and reports creates, updates, and unchanged layouts without sending writes. Sync refuses to remove account-only schema fields and performs no writes if preflight finds an unsafe layout.
 
 ```bash
 # Sync blocks only
@@ -394,15 +398,43 @@ npx backstage sync blocks
 npx backstage sync
 ```
 
-`install` writes `blocks/hero/manifest.json` and a block-named generic Astro scaffold without overwriting existing files. `fork` writes a site-owned identity such as `restaurant-site:hero@1` and records `derived_from: starter-astro:hero@1`; edit the manifest schema only after forking. Visual-only renderer changes do not require a semantic fork. `validate` checks all manifests under `blocks/`, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity.
+`install` writes `<blockManifestDirectory>/hero/manifest.json` and a block-named generic Astro scaffold without overwriting existing files. `fork` writes a site-owned identity such as `restaurant-site:hero@1` and records `derived_from: starter-astro:hero@1`; edit the manifest schema only after forking. Visual-only renderer changes do not require a semantic fork. `validate` checks all manifests under the configured directory, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity.
 
-The legacy React `blocks` array in `backstage/config.ts` remains supported and can be synced alongside manifests, but do not define the same slug in both places.
+The legacy React `blocks` array remains supported in the config file, and can be synced alongside manifests, but do not define the same slug in both places.
 
-Add this to `backstage/config.ts`:
+Layouts may be declared with a versioned manifest envelope or the existing inline `{ name, slug, schema }` form. A manifest uses `manifest_version: 1`, `type: "layout"`, and `schema.fields`; the CLI validates every configured layout and rejects duplicate slugs before writing. Sync preflights account layouts by slug, skips unchanged layouts, and refuses updates that would remove account-only schema fields. A create conflict triggers a fresh lookup and the same safety checks. The Backstage API payload remains `{ name, slug, schema }`.
 
 ```typescript
 import { defineConfig } from "@antlur/backstage";
-import { heroBlock } from "./blocks/hero";
+
+export default defineConfig({
+  layouts: [
+    {
+      manifest_version: 1,
+      type: "layout",
+      name: "Standard Page",
+      slug: "standard-page",
+      schema: { fields: [] },
+    },
+  ],
+});
+```
+
+For a starter that keeps manifests next to renderer files, add this to `backstage.config.ts`:
+
+```typescript
+import { defineConfig } from "@antlur/backstage";
+
+export default defineConfig({
+  blockManifestDirectory: "src/blocks",
+});
+```
+
+Inline React blocks remain supported when needed:
+
+```typescript
+import { defineConfig } from "@antlur/backstage";
+import { heroBlock } from "./src/blocks/hero";
 
 export default defineConfig({
   accountId: process.env.BACKSTAGE_ACCOUNT_ID,

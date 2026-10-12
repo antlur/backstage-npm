@@ -21,8 +21,8 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-async function writeBlockFiles(manifest: BlockManifest, cwd: string): Promise<string> {
-  const directory = resolve(cwd, "blocks", manifest.slug);
+async function writeBlockFiles(manifest: BlockManifest, cwd: string, blockManifestDirectory = "blocks"): Promise<string> {
+  const directory = resolve(cwd, blockManifestDirectory, manifest.slug);
   const manifestPath = join(directory, "manifest.json");
   const rendererFileName = astroRendererFileName(manifest.slug);
   const rendererPath = join(directory, rendererFileName);
@@ -50,9 +50,13 @@ export function searchBlocks(query: string): string[] {
   return searchRegistryBlocks(query).map(formatRegistryBlock);
 }
 
-export async function installBlock(identity: string, cwd = process.cwd()): Promise<string> {
+export async function installBlock(
+  identity: string,
+  cwd = process.cwd(),
+  blockManifestDirectory = "blocks",
+): Promise<string> {
   const manifest = validateBlockManifest(getRegistryBlock(identity));
-  return writeBlockFiles(manifest, cwd);
+  return writeBlockFiles(manifest, cwd, blockManifestDirectory);
 }
 
 export async function forkBlock(
@@ -60,6 +64,7 @@ export async function forkBlock(
   namespace: string,
   slug = `${namespace}-${parseBlockIdentity(identity).key}`,
   cwd = process.cwd(),
+  blockManifestDirectory = "blocks",
 ): Promise<string> {
   const source = getRegistryBlock(identity);
   const sourceIdentity = parseBlockIdentity(source.registry_identity);
@@ -81,7 +86,7 @@ export async function forkBlock(
     derived_from: source.registry_identity,
   });
 
-  return writeBlockFiles(manifest, cwd);
+  return writeBlockFiles(manifest, cwd, blockManifestDirectory);
 }
 
 async function collectManifestPaths(path: string): Promise<string[]> {
