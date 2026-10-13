@@ -38,10 +38,7 @@ export class NavigationService extends BaseService {
     const navigations = await this.list(options);
 
     return Promise.all(
-      navigations.map(async (navigation: any) => {
-        const res = await this.client.get<ApiCollectionResponse<Navigation>>("/navigations/" + navigation.id, options);
-        return res.data[0];
-      }),
+      navigations.map(({ id }) => this.getNavigation(id, options)),
     );
   }
 
@@ -54,14 +51,23 @@ export class NavigationService extends BaseService {
     const res = await this.client.get<ApiSingleResponse<Navigation>>(`/navigations/${id}`, options);
     const navigation = res.data;
 
-    const topLevelItems = navigation.items.filter((item: any) => item.parent_id === null);
+    const itemsByParent = new Map<string | null, NavigationItem[]>();
 
-    topLevelItems.forEach((item: any) => {
-      item.children = navigation.items.filter((child: any) => child.parent_id === item.id);
+    navigation.items.forEach((item) => {
+      const parentId = item.parent_id as string | null;
+      const siblings = itemsByParent.get(parentId) ?? [];
+      siblings.push(item);
+      itemsByParent.set(parentId, siblings);
     });
 
-    navigation.items = topLevelItems;
+    const buildTree = (item: NavigationItem): NavigationItem => ({
+      ...item,
+      children: (itemsByParent.get(item.id) ?? []).map(buildTree),
+    });
 
-    return navigation;
+    return {
+      ...navigation,
+      items: (itemsByParent.get(null) ?? []).map(buildTree),
+    };
   }
 }
