@@ -475,6 +475,99 @@ test("sync reports omitted required metadata and does not repeat writes for unsu
   assert.equal(updates, 1);
 });
 
+test("sync treats nested blueprint slugs and resolved IDs as equivalent on repeat runs", async () => {
+  const base = getRegistryBlock("backstage:hero@1");
+  const manifest = validateBlockManifest({
+    ...base,
+    name: "Product Hero",
+    slug: "product-hero",
+    registry_identity: "site:product-hero@1",
+    derived_from: base.registry_identity,
+    schema: {
+      fields: [
+        ...base.schema.fields,
+        {
+          name: "Related products",
+          slug: "related_products",
+          type: "repeater",
+          order: 6,
+          fields: [
+            {
+              name: "Product",
+              slug: "product",
+              type: "reference",
+              order: 0,
+              allowed_references: ["products"],
+            },
+          ],
+        },
+      ],
+    },
+  });
+  const blueprintId = "61cbe0b2-113f-4ab3-95ad-31b5748da4cc";
+  let remote = {
+    id: "product-hero-id",
+    ...structuredClone(manifest),
+    name: "Earlier Product Hero",
+  };
+  const writes = [];
+  let blueprintReads = 0;
+
+  const resolveReferences = (fields) => fields.map((field) => ({
+    ...field,
+    ...(field.allowed_references
+      ? { allowed_references: field.allowed_references.map((reference) => reference === "products" ? blueprintId : reference) }
+      : {}),
+    fields: resolveReferences(field.fields ?? []),
+  }));
+
+  const client = {
+    blocks: {
+      async list() { return [structuredClone(remote)]; },
+      async create() { throw new Error("should not create"); },
+      async update(id, payload) {
+        writes.push({ id, payload: structuredClone(payload) });
+        remote = {
+          ...remote,
+          ...structuredClone(payload),
+          schema: { fields: resolveReferences(payload.schema.fields) },
+        };
+        return structuredClone(remote);
+      },
+    },
+    blueprints: {
+      async get(id) {
+        blueprintReads += 1;
+        return id === blueprintId ? { id: blueprintId, slug: "products" } : null;
+      },
+    },
+  };
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 1, unchanged: 0 });
+  assert.deepEqual(
+    writes[0].payload.schema.fields.find(({ slug }) => slug === "related_products").fields[0].allowed_references,
+    ["products"],
+    "the API payload should keep the manifest slug rather than sending a resolved UUID",
+  );
+  assert.deepEqual(
+    remote.schema.fields.find(({ slug }) => slug === "related_products").fields[0].allowed_references,
+    [blueprintId],
+    "Backstage should resolve the manifest slug in its stored response",
+  );
+
+  assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 0, unchanged: 1 });
+  assert.equal(writes.length, 1, "the repeated sync should not add another write");
+  assert.equal(blueprintReads, 1, "the repeat sync should resolve the UUID stored by Backstage");
+
+  const unresolvedId = "e0c7f893-e8f9-4fed-98bb-1263e763248a";
+  remote.schema.fields.find(({ slug }) => slug === "related_products").fields[0].allowed_references = [unresolvedId];
+  await assert.rejects(
+    () => syncBlockManifests(client, [manifest]),
+    /Cannot resolve Backstage blueprint reference.*refusing to write/,
+  );
+  assert.equal(writes.length, 1, "an unresolved reference must not trigger an unchecked update");
+});
+
 test("manifest collisions are all detected before the first account write", async () => {
   const hero = getRegistryBlock("backstage:hero@1");
   const first = validateBlockManifest({

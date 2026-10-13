@@ -4,7 +4,11 @@ import type { Field } from "../studio/types/field.js";
 import type { BlockManifest } from "./manifest.js";
 import { validateBlockManifest } from "./registry.js";
 
-type BlockSyncClient = Pick<BackstageClient, "blocks">;
+type BlockSyncClient = Pick<BackstageClient, "blocks"> & {
+  blueprints?: Pick<BackstageClient["blueprints"], "get">;
+};
+
+const UUID_PATTERN = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
 
 export interface BlockManifestSyncResult {
   created: number;
@@ -95,6 +99,70 @@ function accountOnlyFields(localFields: readonly Field[], accountFields: readonl
   });
 }
 
+function hasAllowedReferences(fields: readonly Field[]): boolean {
+  return fields.some((field) => (field.allowed_references?.length ?? 0) > 0
+    || hasAllowedReferences(field.fields ?? []));
+}
+
+function collectMatchingBlueprintIds(
+  accountFields: readonly Field[],
+  manifestFields: readonly Field[],
+  ids: Set<string>,
+): void {
+  const accountBySlug = new Map(accountFields.map((field) => [field.slug, field]));
+
+  for (const manifestField of manifestFields) {
+    const accountField = accountBySlug.get(manifestField.slug);
+    if (!accountField) continue;
+
+    if ((manifestField.allowed_references?.length ?? 0) > 0) {
+      const manifestReferences = manifestField.allowed_references ?? [];
+      const accountReferences = accountField.allowed_references ?? [];
+      const accountReferenceSet = new Set(accountReferences);
+      const manifestReferenceSet = new Set(manifestReferences);
+
+      for (const reference of manifestReferences) {
+        if (UUID_PATTERN.test(reference) && !accountReferenceSet.has(reference)) ids.add(reference);
+      }
+      for (const reference of accountReferences) {
+        if (UUID_PATTERN.test(reference) && !manifestReferenceSet.has(reference)) ids.add(reference);
+      }
+    }
+
+    collectMatchingBlueprintIds(accountField.fields ?? [], manifestField.fields ?? [], ids);
+  }
+}
+
+async function loadBlueprintSlugsById(
+  client: BlockSyncClient,
+  blocks: readonly AccountBlock[],
+  manifests: readonly BlockManifest[],
+): Promise<Map<string, string>> {
+  if (!manifests.some((manifest) => hasAllowedReferences(manifest.schema.fields))) return new Map();
+
+  const ids = new Set<string>();
+  for (const manifest of manifests) {
+    const matchingBlocks = blocks.filter((block) =>
+      block.registry_identity === manifest.registry_identity || block.slug === manifest.slug);
+    for (const block of matchingBlocks) {
+      collectMatchingBlueprintIds(block.schema?.fields ?? [], manifest.schema.fields, ids);
+    }
+  }
+  if (ids.size === 0) return new Map();
+  if (!client.blueprints) {
+    throw new Error("Cannot compare resolved block reference targets without the Backstage BlueprintsService.");
+  }
+
+  const resolved = await Promise.all([...ids].map(async (id) => {
+    const blueprint = await client.blueprints!.get(id);
+    if (!blueprint) {
+      throw new Error(`Cannot resolve Backstage blueprint reference "${id}"; refusing to write an unchecked schema change.`);
+    }
+    return [id.toLowerCase(), blueprint.slug] as const;
+  }));
+  return new Map(resolved);
+}
+
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
 
@@ -107,7 +175,7 @@ function stableJson(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
-function normalizedFields(fields: readonly Field[]): unknown[] {
+function normalizedFields(fields: readonly Field[], blueprintSlugsById: ReadonlyMap<string, string>): unknown[] {
   return fields.map((field) => {
     const { type_id: _typeId, fields: nestedFields, ...portable } = field as Field & { type_id?: string | null };
 
@@ -117,13 +185,15 @@ function normalizedFields(fields: readonly Field[]): unknown[] {
       placeholder: field.placeholder ?? null,
       required: Boolean(field.required),
       options: field.options ?? [],
-      allowed_references: field.allowed_references ?? [],
+      allowed_references: (field.allowed_references ?? []).map((reference) =>
+        blueprintSlugsById.get(reference.toLowerCase()) ?? reference,
+      ),
       is_multiple: Boolean(field.is_multiple),
       is_primary: Boolean(field.is_primary),
       show_in_list: Boolean(field.show_in_list),
       order: field.order ?? null,
       value: field.value ?? null,
-      fields: normalizedFields(nestedFields ?? []),
+      fields: normalizedFields(nestedFields ?? [], blueprintSlugsById),
     };
   });
 }
@@ -133,10 +203,11 @@ function comparableFields(
   manifestFields: readonly Field[],
   identity: string,
   warnings: Set<string>,
+  blueprintSlugsById: ReadonlyMap<string, string>,
   parent = "",
 ): { account: unknown[]; manifest: unknown[] } {
-  const account = normalizedFields(accountFields) as Array<Record<string, unknown>>;
-  const manifest = normalizedFields(manifestFields) as Array<Record<string, unknown>>;
+  const account = normalizedFields(accountFields, blueprintSlugsById) as Array<Record<string, unknown>>;
+  const manifest = normalizedFields(manifestFields, blueprintSlugsById) as Array<Record<string, unknown>>;
   const accountIndexes = new Map(accountFields.map((field, index) => [field.slug, index]));
 
   for (const [index, manifestField] of manifestFields.entries()) {
@@ -159,6 +230,7 @@ function comparableFields(
       manifestField.fields ?? [],
       identity,
       warnings,
+      blueprintSlugsById,
       path,
     );
     account[accountIndex].fields = nested.account;
@@ -168,12 +240,18 @@ function comparableFields(
   return { account, manifest };
 }
 
-function matchesManifest(existing: AccountBlock, manifest: BlockManifest, warnings: Set<string>): boolean {
+function matchesManifest(
+  existing: AccountBlock,
+  manifest: BlockManifest,
+  warnings: Set<string>,
+  blueprintSlugsById: ReadonlyMap<string, string>,
+): boolean {
   const fields = comparableFields(
     existing.schema?.fields ?? [],
     manifest.schema.fields,
     manifest.registry_identity,
     warnings,
+    blueprintSlugsById,
   );
 
   return existing.name === manifest.name
@@ -184,7 +262,12 @@ function matchesManifest(existing: AccountBlock, manifest: BlockManifest, warnin
     && stableJson(fields.account) === stableJson(fields.manifest);
 }
 
-function planManifest(manifest: BlockManifest, blocks: AccountBlock[], adoptUnregisteredSlugs: ReadonlySet<string>) {
+function planManifest(
+  manifest: BlockManifest,
+  blocks: AccountBlock[],
+  adoptUnregisteredSlugs: ReadonlySet<string>,
+  blueprintSlugsById: ReadonlyMap<string, string>,
+) {
   let existing = findSingleIdentityMatch(blocks, manifest.registry_identity);
 
   if (existing && existing.slug !== manifest.slug) {
@@ -223,7 +306,7 @@ function planManifest(manifest: BlockManifest, blocks: AccountBlock[], adoptUnre
   }
 
   if (!existing) return { manifest, action: "create" as const, warnings: [] };
-  if (matchesManifest(existing, manifest, warnings)) {
+  if (matchesManifest(existing, manifest, warnings, blueprintSlugsById)) {
     return { manifest, existing, action: "unchanged" as const, warnings: [...warnings] };
   }
   return { manifest, existing, action: "update" as const, warnings: [...warnings] };
@@ -274,7 +357,9 @@ export async function syncBlockManifests(
   }
 
   const blocks = await client.blocks.list();
-  const planned = manifests.map((manifest) => planManifest(manifest, blocks, adoptUnregisteredSlugs));
+  const blueprintSlugsById = await loadBlueprintSlugsById(client, blocks, manifests);
+  const planned = manifests.map((manifest) =>
+    planManifest(manifest, blocks, adoptUnregisteredSlugs, blueprintSlugsById));
   const result = { created: 0, updated: 0, unchanged: 0 };
   const warnings = new Set(planned.flatMap((operation) => operation.warnings));
 
@@ -297,7 +382,13 @@ export async function syncBlockManifests(
         const updated = await client.blocks.update(existing.id, apiPayload(manifest));
         result.updated += 1;
         if (updated?.schema?.fields) {
-          comparableFields(updated.schema.fields, manifest.schema.fields, manifest.registry_identity, warnings);
+          comparableFields(
+            updated.schema.fields,
+            manifest.schema.fields,
+            manifest.registry_identity,
+            warnings,
+            blueprintSlugsById,
+          );
         }
         continue;
       }
@@ -305,7 +396,13 @@ export async function syncBlockManifests(
       const created = await client.blocks.create(apiPayload(manifest));
       result.created += 1;
       if (created?.schema?.fields) {
-        comparableFields(created.schema.fields, manifest.schema.fields, manifest.registry_identity, warnings);
+        comparableFields(
+          created.schema.fields,
+          manifest.schema.fields,
+          manifest.registry_identity,
+          warnings,
+          blueprintSlugsById,
+        );
       }
     } catch (error) {
       if (action !== "create" || statusOf(error) !== 409) {
@@ -314,7 +411,7 @@ export async function syncBlockManifests(
 
       try {
         const refreshedBlocks = await client.blocks.list();
-        const raced = planManifest(manifest, refreshedBlocks, adoptUnregisteredSlugs);
+        const raced = planManifest(manifest, refreshedBlocks, adoptUnregisteredSlugs, blueprintSlugsById);
         raced.warnings.forEach((warning) => warnings.add(warning));
 
         if (raced.action === "create") {
@@ -333,7 +430,13 @@ export async function syncBlockManifests(
         const updated = await client.blocks.update(raced.existing.id, apiPayload(manifest));
         result.updated += 1;
         if (updated?.schema?.fields) {
-          comparableFields(updated.schema.fields, manifest.schema.fields, manifest.registry_identity, warnings);
+          comparableFields(
+            updated.schema.fields,
+            manifest.schema.fields,
+            manifest.registry_identity,
+            warnings,
+            blueprintSlugsById,
+          );
         }
       } catch (raceError) {
         throw failureAfterPartialSync(manifest, result, raceError);
