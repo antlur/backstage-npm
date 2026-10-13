@@ -5,7 +5,7 @@ import type { BlockManifest } from "./manifest.js";
 import { validateBlockManifest } from "./registry.js";
 
 type BlockSyncClient = Pick<BackstageClient, "blocks"> & {
-  blueprints?: Pick<BackstageClient["blueprints"], "get">;
+  blueprints?: Pick<BackstageClient["blueprints"], "list">;
 };
 
 const UUID_PATTERN = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i;
@@ -153,14 +153,19 @@ async function loadBlueprintSlugsById(
     throw new Error("Cannot compare resolved block reference targets without the Backstage BlueprintsService.");
   }
 
-  const resolved = await Promise.all([...ids].map(async (id) => {
-    const blueprint = await client.blueprints!.get(id);
-    if (!blueprint) {
+  const blueprints = await client.blueprints.list();
+  const slugsById = new Map(blueprints.map((blueprint) => [blueprint.id.toLowerCase(), blueprint.slug]));
+  const resolved = new Map<string, string>();
+
+  for (const id of ids) {
+    const slug = slugsById.get(id.toLowerCase());
+    if (!slug) {
       throw new Error(`Cannot resolve Backstage blueprint reference "${id}"; refusing to write an unchecked schema change.`);
     }
-    return [id.toLowerCase(), blueprint.slug] as const;
-  }));
-  return new Map(resolved);
+    resolved.set(id.toLowerCase(), slug);
+  }
+
+  return resolved;
 }
 
 function stableJson(value: unknown): string {

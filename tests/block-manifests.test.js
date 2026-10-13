@@ -536,9 +536,9 @@ test("sync treats nested blueprint slugs and resolved IDs as equivalent on repea
       },
     },
     blueprints: {
-      async get(id) {
+      async list() {
         blueprintReads += 1;
-        return id === blueprintId ? { id: blueprintId, slug: "products" } : null;
+        return [{ id: blueprintId, slug: "products" }];
       },
     },
   };
