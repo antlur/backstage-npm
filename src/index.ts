@@ -26,6 +26,7 @@ export * from "./endpoints/press.js";
 export * from "./endpoints/redirects.js";
 export * from "./endpoints/reviews.js";
 export * from "./endpoints/routes.js";
+export * from "./endpoints/structured-data.js";
 export * from "./endpoints/website.js";
 
 // Re-export domain types

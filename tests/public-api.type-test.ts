@@ -1,7 +1,7 @@
 import { BackstageClient, defineConfig } from "@antlur/backstage";
 import { PageService } from "@antlur/backstage/endpoints/pages";
 import type { BackstageUserConfig } from "@antlur/backstage/config";
-import type { AccountBlock, HeadlessPageBlock, LayoutConfigDefinition, PageBlocksWriteInput } from "@antlur/backstage";
+import type { AccountBlock, HeadlessPageBlock, LayoutConfigDefinition, PageBlocksWriteInput, StructuredDataDocument } from "@antlur/backstage";
 import type { ResolvedRoute } from "@antlur/backstage/types";
 
 const config: BackstageUserConfig = defineConfig({
@@ -15,6 +15,8 @@ const pages = new PageService(client);
 type AccountBlockId = AccountBlock["id"];
 type ResolvedRoutePath = ResolvedRoute["meta"]["path"];
 
+const structuredData: Promise<StructuredDataDocument> = client.structuredData.get();
+void structuredData;
 void pages.getPages();
 void pages.createPage({ title: "About", slug: "/about", website_id: "website-id", parent_id: null });
 void pages.updatePage("page-id", { website_id: "website-id", parent_id: null });
