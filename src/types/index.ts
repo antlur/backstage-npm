@@ -23,6 +23,7 @@ export type * from "./press.js";
 export type * from "./redirect.js";
 export type * from "./review.js";
 export type * from "./route.js";
+export type * from "./structured-data.js";
 export type * from "./website.js";
 
 export type * from "../studio/types/index.js";

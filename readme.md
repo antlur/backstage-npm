@@ -460,6 +460,7 @@ The client provides the following services:
 - `client.alerts` - Alert management
 - `client.press` - Press release management
 - `client.website` - Website settings
+- `client.structuredData` - schema.org JSON-LD for the account website
 - `client.instagram` - Instagram integration
 
 ## Field Types

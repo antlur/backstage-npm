@@ -19,6 +19,7 @@ import { PressService } from "./endpoints/press.js";
 import { RedirectService } from "./endpoints/redirects.js";
 import { ReviewService } from "./endpoints/reviews.js";
 import { RouteService } from "./endpoints/routes.js";
+import { StructuredDataService } from "./endpoints/structured-data.js";
 import { WebsiteService } from "./endpoints/website.js";
 import { MediaService } from "./endpoints/media.js";
 
@@ -60,6 +61,7 @@ export class BackstageClient {
   public readonly redirects: RedirectService;
   public readonly reviews: ReviewService;
   public readonly routes: RouteService;
+  public readonly structuredData: StructuredDataService;
   public readonly website: WebsiteService;
 
   constructor(config?: BackstageUserConfig) {
@@ -106,6 +108,7 @@ export class BackstageClient {
     this.redirects = new RedirectService(this);
     this.reviews = new ReviewService(this);
     this.routes = new RouteService(this);
+    this.structuredData = new StructuredDataService(this);
     this.website = new WebsiteService(this);
   }
 
