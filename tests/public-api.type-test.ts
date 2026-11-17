@@ -1,4 +1,5 @@
 import { BackstageClient, defineConfig } from "@antlur/backstage";
+import { resolveDesignTokenSource, type DesignTokenSource, type DesignTokensConfig } from "@antlur/backstage";
 import { PageService } from "@antlur/backstage/endpoints/pages";
 import type { BackstageUserConfig } from "@antlur/backstage/config";
 import type { AccountBlock, HeadlessPageBlock, LayoutConfigDefinition, PageBlocksWriteInput, StructuredDataDocument } from "@antlur/backstage";
@@ -53,6 +54,12 @@ const tokenUpdate: ThemeTokensUpdate = { tokens: { action: colorToken }, values:
 void client.website.updateWebsite("website-id", { theme_tokens: tokenUpdate });
 void defineConfig({ themeTokens: { action: colorToken } });
 void (null as unknown as WebsiteThemeTokens);
+const source: DesignTokenSource = resolveDesignTokenSource({ designTokens: { source: "backstage" } });
+const localDesign: DesignTokensConfig = { source: "local" };
+void source;
+void defineConfig({ designTokens: localDesign });
+// @ts-expect-error Design ownership is explicit, not an inferred or arbitrary source.
+void defineConfig({ designTokens: { source: "auto" } });
 // @ts-expect-error Theme tokens only support the deployed color type.
 const fontToken: ColorThemeToken = { label: "Font", type: "font", cssVariable: "--theme-font-body", default: "#fff" };
 void fontToken;

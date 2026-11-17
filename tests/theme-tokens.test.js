@@ -5,14 +5,14 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { validateThemeTokenDeclarations } from "../dist/index.js";
+import { defineConfig, resolveDesignTokenSource, validateThemeTokenDeclarations } from "../dist/index.js";
 import { syncThemeTokens } from "../dist/cli/actions/sync-theme-tokens.js";
 
 const declarations = {
   action: { label: " Action ", type: "color", cssVariable: "--theme-color-action", default: "#abc" },
 };
 const normalized = validateThemeTokenDeclarations(declarations);
-const config = { accountId: "account-1", token: "test-token", baseURL: "https://example.test/api" };
+const config = { accountId: "account-1", token: "test-token", baseURL: "https://example.test/api", designTokens: { source: "backstage" } };
 const website = (tokens = {}) => ({ id: "website-1", theme_tokens: { tokens, values: { action: "palette:primary", retired: "#123456" } } });
 
 async function withServerState(websites, callback, failure) {
@@ -30,6 +30,28 @@ async function withServerState(websites, callback, failure) {
   };
   try { await callback(calls); } finally { globalThis.fetch = originalFetch; }
 }
+
+test("design source defaults local, is explicit, and rejects malformed configuration", () => {
+  assert.equal(resolveDesignTokenSource({}), "local");
+  assert.equal(resolveDesignTokenSource({ designTokens: {} }), "local");
+  assert.equal(resolveDesignTokenSource({ designTokens: { source: "local" } }), "local");
+  assert.equal(resolveDesignTokenSource(config), "backstage");
+  for (const designTokens of [null, [], "backstage", { source: "auto" }, { source: null }, { source: true }]) {
+    assert.throws(() => resolveDesignTokenSource({ designTokens }), /designTokens.source/);
+    assert.throws(() => defineConfig({ designTokens }), /designTokens.source/);
+  }
+});
+
+test("local and omitted design sources make no theme requests, including dry runs without credentials", async () => {
+  await withServerState([], async (calls) => {
+    for (const designTokens of [undefined, {}, { source: "local" }]) {
+      for (const options of [{}, { dryRun: true }]) {
+        assert.equal(await syncThemeTokens({ designTokens, themeTokens: declarations }, options), null);
+      }
+    }
+    assert.equal(calls.length, 0);
+  });
+});
 
 test("declarations match the API's normalization and reject unsupported token types and CSS", () => {
   assert.equal(normalized.action.default, "#AABBCC");
@@ -94,7 +116,9 @@ test("invalid local config, ambiguous accounts, and older APIs cannot cause a wr
 test("CLI supports declaration dry-run and reports failed writes with a nonzero exit", async () => {
   const directory = await mkdtemp(join(tmpdir(), "backstage-theme-"));
   let writes = 0;
+  let requests = 0;
   const server = createServer(async (request, response) => {
+    requests++;
     response.setHeader("Content-Type", "application/json");
     if (request.method === "PUT") { writes++; response.writeHead(422); response.end(JSON.stringify({ message: "Invalid declarations" })); }
     else response.end(JSON.stringify({ data: [website()] }));
@@ -112,6 +136,16 @@ test("CLI supports declaration dry-run and reports failed writes with a nonzero 
   });
   try {
     await writeFile(join(directory, "backstage.config.ts"), `export default ${JSON.stringify({ themeTokens: declarations })}`);
+    const local = await run(["--dry-run"]);
+    assert.equal(local.status, 0, local.output);
+    assert.match(local.output, /local CSS/);
+    assert.equal(requests, 0);
+    await writeFile(join(directory, "backstage.config.ts"), `export default ${JSON.stringify({ designTokens: { source: "auto" }, themeTokens: declarations })}`);
+    const invalid = await run([]);
+    assert.equal(invalid.status, 1, invalid.output);
+    assert.match(invalid.output, /designTokens.source/);
+    assert.equal(requests, 0);
+    await writeFile(join(directory, "backstage.config.ts"), `export default ${JSON.stringify({ designTokens: { source: "backstage" }, themeTokens: declarations })}`);
     const preview = await run(["--dry-run"]);
     assert.equal(preview.status, 0, preview.output);
     assert.match(preview.output, /would update/);

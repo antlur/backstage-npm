@@ -1,5 +1,5 @@
 import { BackstageClient } from "../../client.js";
-import type { BackstageUserConfig } from "../../config.js";
+import { resolveDesignTokenSource, type BackstageUserConfig } from "../../config.js";
 import { validateThemeTokenDeclarations } from "../../theme-tokens/declarations.js";
 import type { ThemeTokenDeclarations } from "../../types/theme-tokens.js";
 
@@ -12,6 +12,10 @@ export async function syncThemeTokens(
   config: BackstageUserConfig,
   options: { dryRun?: boolean } = {},
 ): Promise<{ websiteId: string; changed: boolean } | null> {
+  if (resolveDesignTokenSource(config) === "local") {
+    console.log("Design tokens use local CSS; skipping theme token sync");
+    return null;
+  }
   if (config.themeTokens === undefined) {
     console.log("No theme token declarations found in config");
     return null;

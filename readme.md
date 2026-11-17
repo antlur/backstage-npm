@@ -528,12 +528,35 @@ For questions or support, please open an issue on GitHub or contact the Backstag
 
 ## Headless theme token declarations
 
-Available in SDK 1.22.0. This feature follows the separate 1.21.0 release.
+Declaration sync is available in SDK 1.22.0; explicit design sources are available in 1.23.0.
+
+Design ownership is configured independently from content and API credentials. It
+defaults to local when `designTokens` or `source` is omitted:
+
+```ts
+export default defineConfig({
+  designTokens: { source: "local" }, // or "backstage" to opt in
+});
+```
+
+Local mode uses committed CSS and skips theme declaration sync, including dry runs,
+without making requests. Backstage mode opts into managed Brand and Theme values;
+renderers read the existing website's `theme.colors.palette`, `font_families`, and
+`theme_tokens` during their normal build. The SDK does not fetch/apply styles just
+because `defineConfig` was called. `resolveDesignTokenSource(config)` validates and
+resolves the setting for consumers; `DesignTokenSource` and `DesignTokensConfig` are
+public types. Invalid sources fail rather than silently enabling managed design.
+
+**Upgrading from 1.22:** theme sync previously ran whenever declarations existed.
+Add `designTokens: { source: "backstage" }` to keep syncing. API credentials and
+Backstage content alone do not opt a site into managed design. Builds remain
+read-only; declaration registration is an explicit CLI action.
 
 Register the color roles a site supports with the deployed website theme-token API:
 
 ```ts
 export default defineConfig({
+  designTokens: { source: "backstage" },
   themeTokens: {
     action: {
       label: "Action color",
@@ -563,8 +586,8 @@ Only color tokens are supported. The API accepts a hex default and editor overri
 of `#RGB`, `#RRGGBB`, or `palette:<palette token or name>`. SDK exports include
 `ColorThemeToken`, `ThemeTokenDeclarations`, `WebsiteThemeTokens`, and
 `ThemeTokensUpdate`; `Website.theme_tokens` is optional for older-server compatibility.
-Renderers resolve palette overrides from `website.theme.colors.palette`, fall back
-to the declaration default when an override is missing or no longer resolves, and
-emit CSS variables during their normal site build. Declaration sync does not modify
+Renderers resolve palette overrides from `website.theme.colors.palette`, leave
+local CSS defaults in control when an override is missing or no longer resolves,
+and emit CSS variables during their normal site build. Declaration sync does not modify
 local CSS or font assets. On older servers without `theme_tokens`, sync stops before
 writing instead of treating the missing capability as an empty schema.

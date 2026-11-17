@@ -5,6 +5,12 @@ import type { ThemeTokenDeclarations } from "./types/theme-tokens.js";
 
 const DEFAULT_BASE_URL = "https://bckstg.app/api";
 
+export type DesignTokenSource = "local" | "backstage";
+
+export interface DesignTokensConfig {
+  source?: DesignTokenSource;
+}
+
 export interface BlueprintDefinition {
   name: string;
   slug: string;
@@ -33,6 +39,8 @@ export interface BackstageUserConfig {
   token?: string | undefined;
   baseURL?: string;
   blockManifestDirectory?: string;
+  /** Design ownership is independent of content; omitted source means local CSS. */
+  designTokens?: DesignTokensConfig;
   /** Omit to leave server declarations alone; an empty object explicitly clears them. */
   themeTokens?: ThemeTokenDeclarations;
   blocks?: BlockDefinition<any>[] | undefined;
@@ -42,6 +50,16 @@ export interface BackstageUserConfig {
 }
 
 let userConfig: BackstageUserConfig = {};
+
+export function resolveDesignTokenSource(config: Pick<BackstageUserConfig, "designTokens">): DesignTokenSource {
+  const value = config.designTokens;
+  if (value === undefined) return "local";
+  if (typeof value !== "object" || value === null || Array.isArray(value)
+    || (value.source !== undefined && value.source !== "local" && value.source !== "backstage")) {
+    throw new Error('designTokens.source must be "local" or "backstage".');
+  }
+  return value.source ?? "local";
+}
 
 function envConfig(): BackstageUserConfig {
   const env = typeof process === "undefined" ? undefined : process.env;
@@ -66,6 +84,7 @@ function mergeDefined(base: BackstageUserConfig, overrides: BackstageUserConfig)
 }
 
 export function defineConfig(config: BackstageUserConfig): BackstageUserConfig {
+  resolveDesignTokenSource(config);
   userConfig = mergeDefined(userConfig, config);
   return getGlobalConfig();
 }

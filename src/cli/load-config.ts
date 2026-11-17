@@ -3,7 +3,7 @@ import path from "path";
 import { pathToFileURL } from "url";
 import { createJiti } from "jiti";
 import { validateThemeTokenDeclarations } from "../theme-tokens/declarations.js";
-import type { BackstageUserConfig } from "../config.js";
+import { resolveDesignTokenSource, type BackstageUserConfig } from "../config.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -26,6 +26,7 @@ function validateConfig(value: unknown): BackstageUserConfig {
   }
 
   if (value.themeTokens !== undefined) validateThemeTokenDeclarations(value.themeTokens);
+  resolveDesignTokenSource(value);
 
   return value as BackstageUserConfig;
 }
