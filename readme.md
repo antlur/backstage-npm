@@ -528,6 +528,8 @@ For questions or support, please open an issue on GitHub or contact the Backstag
 
 ## Headless theme token declarations
 
+Available in SDK 1.22.0. This feature follows the separate 1.21.0 release.
+
 Register the color roles a site supports with the deployed website theme-token API:
 
 ```ts
