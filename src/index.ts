@@ -37,3 +37,5 @@ export * from "./blocks/manifest.js";
 export * from "./blocks/registry.js";
 export * from "./blocks/sync.js";
 export * from "./layouts/manifest.js";
+
+export { validateThemeTokenDeclarations } from "./theme-tokens/declarations.js";

@@ -1,4 +1,5 @@
 import type { ApiCollectionResponse, ApiSingleResponse, Website } from "../types/index";
+import type { ThemeTokensUpdate } from "../types/theme-tokens.js";
 import { BaseService } from "./base.js";
 
 export interface CreateWebsiteParams {
@@ -8,6 +9,7 @@ export interface CreateWebsiteParams {
 }
 
 export interface UpdateWebsiteParams {
+  theme_tokens?: ThemeTokensUpdate;
   app_name?: string;
   domain?: string;
   [key: string]: any;

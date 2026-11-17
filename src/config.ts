@@ -1,6 +1,8 @@
 import type { BlockDefinition } from "./studio/types/index.js";
 import type { LayoutConfigDefinition } from "./layouts/manifest.js";
 
+import type { ThemeTokenDeclarations } from "./types/theme-tokens.js";
+
 const DEFAULT_BASE_URL = "https://bckstg.app/api";
 
 export interface BlueprintDefinition {
@@ -31,6 +33,8 @@ export interface BackstageUserConfig {
   token?: string | undefined;
   baseURL?: string;
   blockManifestDirectory?: string;
+  /** Omit to leave server declarations alone; an empty object explicitly clears them. */
+  themeTokens?: ThemeTokenDeclarations;
   blocks?: BlockDefinition<any>[] | undefined;
   blueprints?: BlueprintDefinition[] | undefined;
   layouts?: LayoutConfigDefinition[] | undefined;

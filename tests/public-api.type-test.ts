@@ -46,3 +46,15 @@ const pageLayout: LayoutConfigDefinition = {
 void defineConfig({ layouts: [pageLayout] });
 void defineConfig({ layouts: [{ name: "Legacy Inline", slug: "legacy-inline", schema: { fields: [] } }] });
 void defineConfig({ layouts: [{ name: "Extended Inline", slug: "extended-inline", schema: { fields: [] }, description: "Existing config metadata" }] });
+
+import type { ColorThemeToken, ThemeTokensUpdate, WebsiteThemeTokens } from "@antlur/backstage";
+const colorToken: ColorThemeToken = { label: "Action", type: "color", cssVariable: "--theme-color-action", default: "#294C3D" };
+const tokenUpdate: ThemeTokensUpdate = { tokens: { action: colorToken }, values: { action: "palette:primary" } };
+void client.website.updateWebsite("website-id", { theme_tokens: tokenUpdate });
+void defineConfig({ themeTokens: { action: colorToken } });
+void (null as unknown as WebsiteThemeTokens);
+// @ts-expect-error Theme tokens only support the deployed color type.
+const fontToken: ColorThemeToken = { label: "Font", type: "font", cssVariable: "--theme-font-body", default: "#fff" };
+void fontToken;
+// @ts-expect-error Invalid literal override formats are rejected by the typed update surface.
+void client.website.updateWebsite("website-id", { theme_tokens: { values: { action: "red" } } });
