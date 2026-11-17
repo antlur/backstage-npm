@@ -7,6 +7,7 @@ import { program } from "commander";
 import { loadBackstageConfig } from "./load-config.js";
 import { syncBlocks } from "./actions/sync-blocks.js";
 import { syncBlueprints } from "./actions/sync-blueprints.js";
+import { syncThemeTokens } from "./actions/sync-theme-tokens.js";
 import { syncLayouts } from "./actions/sync-layouts.js";
 import {
   forkBlock,
@@ -23,11 +24,11 @@ program
 
 program
   .command("sync [type]")
-  .description("Sync blocks, blueprints, and layouts with the Backstage CMS")
-  .option("--dry-run", "Preview block manifest or layout changes without writing (use with sync blocks or layouts)")
+  .description("Sync blocks, blueprints, layouts, and theme tokens with the Backstage CMS")
+  .option("--dry-run", "Preview block manifest or layout changes without writing (use with sync blocks, layouts, or theme-tokens)")
   .action(async (type = "all", options) => {
-    if (options.dryRun && type !== "blocks" && type !== "layouts") {
-      throw new Error("--dry-run is supported only with 'backstage sync blocks' or 'backstage sync layouts'.");
+    if (options.dryRun && type !== "blocks" && type !== "layouts" && type !== "theme-tokens") {
+      throw new Error("--dry-run is supported only with 'backstage sync blocks', 'backstage sync layouts', or 'backstage sync theme-tokens'.");
     }
 
     const backstageConfig = await loadBackstageConfig();
@@ -53,14 +54,20 @@ program
       return;
     }
 
+    if (type === "theme-tokens") {
+      await syncThemeTokens(backstageConfig, { dryRun: options.dryRun });
+      return;
+    }
+
     if (type === "all") {
       await syncBlocks(backstageConfig);
       await syncBlueprints(backstageConfig);
       await syncLayouts(backstageConfig);
+      await syncThemeTokens(backstageConfig);
       return;
     }
 
-    console.error(`Unknown type: ${type}. Valid types are: blocks, blueprints, layouts, all`);
+    console.error(`Unknown type: ${type}. Valid types are: blocks, blueprints, layouts, theme-tokens, all`);
     process.exit(1);
   });
 

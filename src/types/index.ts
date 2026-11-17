@@ -25,5 +25,6 @@ export type * from "./review.js";
 export type * from "./route.js";
 export type * from "./structured-data.js";
 export type * from "./website.js";
+export type * from "./theme-tokens.js";
 
 export type * from "../studio/types/index.js";

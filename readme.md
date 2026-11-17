@@ -525,3 +525,46 @@ Issues and pull requests are welcome! Please visit the [GitHub repository](https
 ## Support
 
 For questions or support, please open an issue on GitHub or contact the Backstage CMS team.
+
+## Headless theme token declarations
+
+Available in SDK 1.22.0. This feature follows the separate 1.21.0 release.
+
+Register the color roles a site supports with the deployed website theme-token API:
+
+```ts
+export default defineConfig({
+  themeTokens: {
+    action: {
+      label: "Action color",
+      type: "color",
+      cssVariable: "--theme-color-action",
+      default: "#294C3D",
+    },
+  },
+});
+```
+
+```bash
+backstage sync theme-tokens --dry-run
+backstage sync theme-tokens
+```
+
+This selects the account's single website and sends only `theme_tokens.tokens` through
+its existing update endpoint. Saved `theme_tokens.values` overrides are preserved,
+including keys temporarily removed from the declarations. Repeating a sync skips
+unchanged declarations. Omitting `themeTokens` leaves server declarations alone;
+setting it to `{}` explicitly clears declarations while preserving saved values.
+`backstage sync all` includes declarations when configured. Explicit sync needs a
+Backstage account token with website write access; read-only build tokens still work
+for reading values.
+
+Only color tokens are supported. The API accepts a hex default and editor overrides
+of `#RGB`, `#RRGGBB`, or `palette:<palette token or name>`. SDK exports include
+`ColorThemeToken`, `ThemeTokenDeclarations`, `WebsiteThemeTokens`, and
+`ThemeTokensUpdate`; `Website.theme_tokens` is optional for older-server compatibility.
+Renderers resolve palette overrides from `website.theme.colors.palette`, fall back
+to the declaration default when an override is missing or no longer resolves, and
+emit CSS variables during their normal site build. Declaration sync does not modify
+local CSS or font assets. On older servers without `theme_tokens`, sync stops before
+writing instead of treating the missing capability as an empty schema.

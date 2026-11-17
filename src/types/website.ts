@@ -1,3 +1,4 @@
+import type { WebsiteThemeTokens } from "./theme-tokens.js";
 import { Navigation } from "./navigation";
 
 export interface SocialLink {
@@ -11,7 +12,7 @@ export interface FontFamily {
 }
 
 export interface ThemeColors {
-  palette?: Array<{ name: string; value: string }>;
+  palette?: Array<{ name: string; token?: string | null; value: string }>;
   primary?: string;
   primaryForeground: string;
   secondary?: string;
@@ -97,6 +98,7 @@ export interface Website {
   meta: WebsiteMeta;
   open_graph: OpenGraph;
   theme: Theme;
+  theme_tokens?: WebsiteThemeTokens;
   google_analytics_id: string | null;
   facebook_pixel_id: string | null;
   font_urls: string[] | null;

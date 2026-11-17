@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import path from "path";
 import { pathToFileURL } from "url";
 import { createJiti } from "jiti";
+import { validateThemeTokenDeclarations } from "../theme-tokens/declarations.js";
 import type { BackstageUserConfig } from "../config.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -23,6 +24,8 @@ function validateConfig(value: unknown): BackstageUserConfig {
   if (value.layouts !== undefined && !Array.isArray(value.layouts)) {
     throw new Error("layouts must be an array when provided");
   }
+
+  if (value.themeTokens !== undefined) validateThemeTokenDeclarations(value.themeTokens);
 
   return value as BackstageUserConfig;
 }
