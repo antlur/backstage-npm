@@ -1,5 +1,6 @@
 // Re-export config
-export { defineConfig, getGlobalConfig } from "./config.js";
+export { defineConfig, getGlobalConfig, resolveDesignTokenSource } from "./config.js";
+export type { DesignTokenSource, DesignTokensConfig } from "./config.js";
 
 // Re-export the client class
 export { BackstageClient } from "./client.js";
