@@ -35,7 +35,6 @@ export * from "./types/index.js";
 
 // Framework-neutral block manifest and registry APIs.
 export * from "./blocks/manifest.js";
-export * from "./blocks/registry.js";
 export * from "./blocks/sync.js";
 export * from "./layouts/manifest.js";
 

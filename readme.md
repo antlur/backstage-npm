@@ -98,13 +98,11 @@ const menu = await client.menus.getMenu("main-menu");
 const customBlocksEnabled = await client.modules.isEnabled("cms.custom_blocks");
 ```
 
-## SDK Block Registry
+## Project-Owned Block Manifests
 
-The registry ships versioned, framework-neutral schemas for the initial site-building block set: Hero, Video Hero, Rich Text, Image, Image Gallery, Image Link Grid, Media With Text, Card Grid, Call to Action, Menu, Upcoming Events, Instagram Feed, and Contact Form. Image Link Grid supports accessible image-only destinations; use Image Gallery when the images are not links and Card Grid when each item needs visible text. Menu blocks select canonical Backstage menu data instead of copying menu content into page fields. The original `backstage:hero@1` contract remains available alongside the renderer-aligned `starter-astro:hero@1` contract; published identities remain immutable.
+The project owns each portable block manifest and its renderer. The SDK validates the manifest format and syncs the project definition to the account editor. The [Astro Starter](https://github.com/antlur/starter-astro) ships its own block catalog and syncs it with `npm run sync:blocks`.
 
-The registry owns each block's portable Backstage field contract. A frontend owns its renderer and visual design. Use the CLI to discover contracts with `backstage block list` or `backstage block search`, install a contract with `backstage block install`, or create a site-owned fork with `backstage block fork --namespace restaurant-site`. The install/fork commands create a manifest and a generic Astro renderer scaffold; they do not supply production styling or replace a starter's tested renderer.
-
-Validate local manifests before syncing them to an account with `backstage block validate`. The Astro headless starter includes maintained renderers for this block set and syncs its site-owned block definitions into an account with `npm run sync:blocks`.
+SDK 2.0 removes the bundled catalog, its list/search/install/fork CLI commands, and the three registry discovery exports. Keep existing project manifests and their identities; no account or page migration is required. To create a site-specific derivative, copy the source manifest and assign a new identity and slug, optionally recording the original identity in `derived_from`.
 
 ## Defining Custom Blocks
 
@@ -386,19 +384,15 @@ npx backstage sync layouts
 npx backstage sync all
 ```
 
-Portable block manifests are independent of React components and renderer styling. The SDK registry includes the legacy-compatible `backstage:hero@1` contract and the site-building contracts under the `starter-astro` namespace:
+Portable block manifests are independent of React components and renderer styling:
 
 ```bash
-npx backstage block list
-npx backstage block search hero
-npx backstage block install starter-astro:hero@1
-npx backstage block fork starter-astro:hero@1 --namespace=restaurant-site
 npx backstage block validate
+npx backstage sync blocks --dry-run
 npx backstage sync blocks
-npx backstage sync
 ```
 
-`install` writes `<blockManifestDirectory>/hero/manifest.json` and a block-named generic Astro scaffold without overwriting existing files. `fork` writes a site-owned identity such as `restaurant-site:hero@1` and records `derived_from: starter-astro:hero@1`; edit the manifest schema only after forking. Visual-only renderer changes do not require a semantic fork. `validate` checks all manifests under the configured directory, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity.
+`validate` checks all manifests under the configured directory, or one file/directory when a path is provided. `sync blocks` creates or updates AccountBlock definitions by registry identity only; it never modifies authored page content. It refuses to adopt a same-slug block with a different or missing identity. The project is responsible for keeping schema edits compatible with existing saved values; adding an optional field can retain the original identity and account block ID.
 
 The legacy React `blocks` array remains supported in the config file, and can be synced alongside manifests, but do not define the same slug in both places.
 

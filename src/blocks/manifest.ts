@@ -115,3 +115,5 @@ export function parseBlockManifest(value: unknown): BlockManifest {
 
   return value as unknown as BlockManifest;
 }
+
+export const validateBlockManifest = parseBlockManifest;

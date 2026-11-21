@@ -1,8 +1,7 @@
 import type { BackstageClient } from "../client.js";
 import type { AccountBlock } from "../types/account-block.js";
 import type { Field } from "../studio/types/field.js";
-import type { BlockManifest } from "./manifest.js";
-import { validateBlockManifest } from "./registry.js";
+import { validateBlockManifest, type BlockManifest } from "./manifest.js";
 
 type BlockSyncClient = Pick<BackstageClient, "blocks"> & {
   blueprints?: Pick<BackstageClient["blueprints"], "list">;
