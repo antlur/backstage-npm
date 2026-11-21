@@ -9,13 +9,7 @@ import { syncBlocks } from "./actions/sync-blocks.js";
 import { syncBlueprints } from "./actions/sync-blueprints.js";
 import { syncThemeTokens } from "./actions/sync-theme-tokens.js";
 import { syncLayouts } from "./actions/sync-layouts.js";
-import {
-  forkBlock,
-  installBlock,
-  listBlocks,
-  searchBlocks,
-  validateManifestPath,
-} from "./actions/block-manifests.js";
+import { validateManifestPath } from "./actions/block-manifests.js";
 
 program
   .name("backstage")
@@ -71,36 +65,7 @@ program
     process.exit(1);
   });
 
-const blocks = program.command("block").description("Discover, install, fork, and validate semantic block manifests");
-
-blocks.command("list").description("List the SDK block registry").action(() => {
-  for (const item of listBlocks()) console.log(item);
-});
-
-blocks.command("search <query>").description("Search the SDK block registry").action((query) => {
-  const results = searchBlocks(query);
-  for (const item of results) console.log(item);
-  if (results.length === 0) console.log("No matching blocks found.");
-});
-
-blocks
-  .command("install <identity>")
-  .description("Install a registry block manifest and Astro renderer scaffold")
-  .action(async (identity) => {
-    const config = await loadBackstageConfig();
-    const directory = await installBlock(identity, process.cwd(), config?.blockManifestDirectory);
-    console.log(`Installed ${identity} in ${directory}`);
-  });
-
-blocks.command("fork <identity>")
-  .description("Fork a registry block's semantic contract into a site namespace")
-  .requiredOption("--namespace <namespace>", "Site or project namespace")
-  .option("--slug <slug>", "Local Backstage slug (defaults to <namespace>-<key>)")
-  .action(async (identity, options) => {
-    const config = await loadBackstageConfig();
-    const directory = await forkBlock(identity, options.namespace, options.slug, process.cwd(), config?.blockManifestDirectory);
-    console.log(`Forked ${identity} into ${directory}`);
-  });
+const blocks = program.command("block").description("Validate project-owned block manifests");
 
 blocks.command("validate [path]")
   .description("Validate one manifest file or all manifests under a directory")

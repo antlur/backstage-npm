@@ -1,16 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
-  getRegistryBlock,
-  listRegistryBlocks,
   parseBlockManifest,
-  searchRegistryBlocks,
   syncBlockManifests,
   validateBlockManifest,
   BackstageClient,
@@ -27,180 +24,81 @@ function runCli(args, cwd) {
   });
 }
 
-test("registry lists the site starter block contracts and reports unsupported versions", () => {
-  const identities = listRegistryBlocks().map((manifest) => manifest.registry_identity);
-  assert.deepEqual(identities.sort(), [
-    "backstage:hero@1",
-    "starter-astro:call-to-action@1",
-    "starter-astro:card-grid@1",
-    "starter-astro:contact-form@1",
-    "starter-astro:hero@1",
-    "starter-astro:image-gallery@1",
-    "starter-astro:image-link-grid@1",
-    "starter-astro:image@1",
-    "starter-astro:instagram-feed@1",
-    "starter-astro:media-with-text@1",
-    "starter-astro:menu@1",
-    "starter-astro:rich-text@1",
-    "starter-astro:upcoming-events@1",
-    "starter-astro:video-hero@1",
-  ]);
-  assert.deepEqual(
-    getRegistryBlock("starter-astro:hero@1").schema.fields.map(({ slug }) => slug),
-    ["variant", "eyebrow", "heading", "body", "image", "imageAlt", "logo", "logoAlt", "actions"],
-  );
-  assert.equal(getRegistryBlock("backstage:hero@1").registry_identity, "backstage:hero@1");
-  assert.equal(searchRegistryBlocks("public Instagram posts").length, 1);
-  assert.equal(getRegistryBlock("starter-astro:menu@1").schema.fields[0].type, "menu_select");
-  const contactForm = getRegistryBlock("starter-astro:contact-form@1");
-  assert.equal(contactForm.schema.fields.find(({ slug }) => slug === "form_id")?.type, "form_select");
-  assert.equal(contactForm.schema.fields.find(({ slug }) => slug === "form_id")?.required, true);
-  assert.deepEqual(
-    getRegistryBlock("starter-astro:call-to-action@1").schema.fields.find(({ slug }) => slug === "actions")?.fields.map(({ slug }) => slug),
-    ["label", "href"],
-  );
-  assert.deepEqual(
-    getRegistryBlock("starter-astro:image-gallery@1").schema.fields.find(({ slug }) => slug === "image_fit")?.options.map(({ value }) => value),
-    ["cover", "contain"],
-  );
-  const imageLinkGrid = getRegistryBlock("starter-astro:image-link-grid@1");
-  assert.deepEqual(imageLinkGrid.schema.fields.find(({ slug }) => slug === "columns")?.options.map(({ value }) => value), ["2", "3", "4"]);
-  assert.deepEqual(imageLinkGrid.schema.fields.find(({ slug }) => slug === "image_fit")?.options.map(({ value }) => value), ["contain", "cover"]);
-  assert.deepEqual(imageLinkGrid.schema.fields.find(({ slug }) => slug === "items")?.fields.map(({ slug, required }) => [slug, required]), [
-    ["image", true],
-    ["link_url", true],
-    ["link_label", true],
-  ]);
-  assert.equal(getRegistryBlock("starter-astro:upcoming-events@1").schema.fields.at(-1)?.slug, "view_all_label");
-  assert.deepEqual(
-    getRegistryBlock("starter-astro:video-hero@1").schema.fields.map(({ slug }) => slug),
-    ["eyebrow", "heading", "body", "video", "poster", "actions"],
-  );
-  assert.throws(() => getRegistryBlock("starter-astro:hero@2"), /Unsupported version/);
-  assert.throws(() => getRegistryBlock("backstage:missing@1"), /not available/);
+const heroManifest = (registry_identity = "backstage:hero@1") => ({
+  manifest_version: 1,
+  type: "block",
+  registry_identity,
+  name: "Hero",
+  slug: "hero",
+  schema: { fields: [{ name: "Heading", slug: "heading", type: "text", order: 0 }] },
 });
 
-test("manifest validation checks supported schema fields, identity, and explicit forks", () => {
-  const hero = getRegistryBlock("backstage:hero@1");
-  assert.equal(validateBlockManifest(hero).registry_identity, "backstage:hero@1");
+const contactManifest = () => ({
+  ...heroManifest("example:contact@1"),
+  name: "Contact",
+  slug: "contact",
+});
 
-  assert.throws(
-    () => parseBlockManifest({ ...hero, manifest_version: 2 }),
-    /Unsupported manifest_version/,
-  );
-  assert.throws(
-    () => validateBlockManifest({ ...hero, registry_identity: "backstage:hero@3" }),
-    /Unsupported registry identity/,
-  );
-  assert.throws(
-    () => parseBlockManifest({ ...hero, derived_from: "backstage:hero@1" }),
-    /derived_from cannot match/,
-  );
-  assert.throws(
-    () => parseBlockManifest({ ...hero, renderer: "react" }),
-    /renderer-specific/,
-  );
+const repeatableActionsManifest = () => ({
+  ...heroManifest("example:actions@1"),
+  name: "Actions",
+  slug: "actions",
+  schema: { fields: [{
+    name: "Actions", slug: "actions", type: "repeater", order: 0,
+    fields: [
+      { name: "Label", slug: "label", type: "text", required: true, order: 0 },
+      { name: "URL", slug: "href", type: "url", required: true, order: 1 },
+    ],
+  }] },
+});
 
-  const duplicateFields = structuredClone(hero);
-  duplicateFields.schema.fields.push({ ...duplicateFields.schema.fields[0] });
-  assert.throws(() => parseBlockManifest(duplicateFields), /duplicates/);
-
-  const changedStandard = structuredClone(hero);
-  changedStandard.schema.fields[1].required = true;
-  assert.throws(() => validateBlockManifest(changedStandard), /Fork it to a site namespace/);
-
-  assert.equal(
-    validateBlockManifest({ ...hero, name: "Homepage Banner", slug: "homepage-banner", description: "Local label." }).slug,
-    "homepage-banner",
-  );
-
-  const presentationChange = structuredClone(hero);
-  presentationChange.schema.fields[1].name = "Main heading";
-  presentationChange.schema.fields[1].order = 10;
-  assert.equal(validateBlockManifest(presentationChange).registry_identity, "backstage:hero@1");
-
-  const starterHero = getRegistryBlock("starter-astro:hero@1");
-  assert.equal(validateBlockManifest(starterHero).derived_from, "backstage:hero@1");
-  assert.throws(
-    () => validateBlockManifest({ ...starterHero, derived_from: "backstage:hero@2" }),
-    /registry-owned and its derived_from value cannot be changed/,
-  );
-
-  const fork = {
-    ...changedStandard,
-    registry_identity: "sunda:hero@1",
+test("validates local contracts without requiring a bundled catalog", () => {
+  const hero = heroManifest("starter-astro:hero@1");
+  const revised = {
+    ...hero,
     derived_from: "backstage:hero@1",
+    schema: { fields: [
+      ...hero.schema.fields,
+      { name: "Layout", slug: "layout", type: "select", order: 1, options: [{ label: "Compact", value: "compact" }] },
+    ] },
   };
-  assert.equal(validateBlockManifest(fork).derived_from, "backstage:hero@1");
+  assert.deepEqual(validateBlockManifest(revised), revised);
+  assert.doesNotThrow(() => validateBlockManifest({ ...revised, registry_identity: "starter-astro:hero@2" }));
+  assert.throws(() => parseBlockManifest({ ...hero, manifest_version: 2 }), /Unsupported manifest_version/);
+  assert.throws(() => parseBlockManifest({ ...hero, derived_from: hero.registry_identity }), /derived_from cannot match/);
+  assert.throws(() => parseBlockManifest({ ...hero, renderer: "react" }), /renderer-specific/);
+  assert.throws(() => parseBlockManifest({
+    ...hero, schema: { fields: [...hero.schema.fields, ...hero.schema.fields] },
+  }), /duplicates/);
 });
 
-test("CLI installs without overwriting, forks with provenance, and validates manifests", async (t) => {
+test("CLI validates an explicit project manifest and no longer installs bundled blocks", async (t) => {
   const cwd = await mkdtemp(join(tmpdir(), "backstage-blocks-"));
   t.after(() => rm(cwd, { recursive: true, force: true }));
 
+  const file = join(cwd, "manifest.json");
+  await writeFile(file, JSON.stringify(heroManifest("example:hero@1")));
+  const valid = runCli(["block", "validate", file], cwd);
+  assert.equal(valid.status, 0, valid.stderr);
+  assert.match(valid.stdout, /example:hero@1/);
+
+  for (const command of ["install", "fork", "list", "search"]) {
+    const removed = runCli(["block", command], cwd);
+    assert.notEqual(removed.status, 0);
+    assert.match(removed.stderr, /unknown command/);
+  }
+
   const syncWithoutConfig = runCli(["sync", "blocks"], cwd);
   assert.notEqual(syncWithoutConfig.status, 0);
-
-  const list = runCli(["block", "list"], cwd);
-  assert.equal(list.status, 0, list.stderr);
-  assert.match(list.stdout, /backstage:hero@1/);
-
-  const search = runCli(["block", "search", "introduction"], cwd);
-  assert.equal(search.status, 0, search.stderr);
-  assert.match(search.stdout, /backstage:hero@1/);
-
-  const install = runCli(["block", "install", "starter-astro:hero@1"], cwd);
-  assert.equal(install.status, 0, install.stderr);
-  const manifestPath = join(cwd, "blocks", "hero", "manifest.json");
-  const astroPath = join(cwd, "blocks", "hero", "Hero.astro");
-  const installed = JSON.parse(await readFile(manifestPath, "utf8"));
-  assert.equal(installed.registry_identity, "starter-astro:hero@1");
-  assert.match(await readFile(astroPath, "utf8"), /HeroBlock/);
-
-  const callToActionInstall = runCli(["block", "install", "starter-astro:call-to-action@1"], cwd);
-  assert.equal(callToActionInstall.status, 0, callToActionInstall.stderr);
-  const callToActionPath = join(cwd, "blocks", "call-to-action", "CallToAction.astro");
-  assert.match(await readFile(callToActionPath, "utf8"), /CallToActionBlock/);
-  assert.doesNotMatch(await readFile(callToActionPath, "utf8"), /HeroBlock/);
-
-  const menuInstall = runCli(["block", "install", "starter-astro:menu@1"], cwd);
-  assert.equal(menuInstall.status, 0, menuInstall.stderr);
-  assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "menu", "manifest.json"), "utf8")).schema.fields[0].type, "menu_select");
-
-  const videoHeroInstall = runCli(["block", "install", "starter-astro:video-hero@1"], cwd);
-  assert.equal(videoHeroInstall.status, 0, videoHeroInstall.stderr);
-  assert.equal(JSON.parse(await readFile(join(cwd, "blocks", "video-hero", "manifest.json"), "utf8")).schema.fields[3].type, "media");
-  assert.match(await readFile(join(cwd, "blocks", "video-hero", "VideoHero.astro"), "utf8"), /VideoHeroBlock/);
-
-  const repeatedInstall = runCli(["block", "install", "starter-astro:hero@1"], cwd);
-  assert.notEqual(repeatedInstall.status, 0);
-  assert.equal(JSON.parse(await readFile(manifestPath, "utf8")).registry_identity, "starter-astro:hero@1");
-
-  const fork = runCli(["block", "fork", "starter-astro:hero@1", "--namespace", "sunda"], cwd);
-  assert.equal(fork.status, 0, fork.stderr);
-  const forked = JSON.parse(await readFile(join(cwd, "blocks", "sunda-hero", "manifest.json"), "utf8"));
-  assert.equal(forked.registry_identity, "sunda:hero@1");
-  assert.equal(forked.derived_from, "starter-astro:hero@1");
-
-  const validation = runCli(["block", "validate"], cwd);
-  assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.stdout, /Validated 5 block manifest/);
-
-  const unsupported = runCli(["block", "install", "starter-astro:hero@2"], cwd);
-  assert.notEqual(unsupported.status, 0);
-  assert.match(unsupported.stderr, /Unsupported version/);
-
   const syncHelp = runCli(["sync", "--help"], cwd);
   assert.equal(syncHelp.status, 0, syncHelp.stderr);
   assert.match(syncHelp.stdout, /--dry-run/);
-
   const invalidDryRun = runCli(["sync", "all", "--dry-run"], cwd);
   assert.notEqual(invalidDryRun.status, 0);
   assert.match(invalidDryRun.stderr, /supported only with 'backstage sync blocks'/);
 
-  const invalidPath = join(cwd, "blocks", "invalid.json");
-  await writeFile(invalidPath, JSON.stringify({ ...installed, registry_identity: "bad" }));
-  const invalid = runCli(["block", "validate", invalidPath], cwd);
+  await writeFile(file, JSON.stringify({ ...heroManifest(), registry_identity: "bad" }));
+  const invalid = runCli(["block", "validate", file], cwd);
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /Invalid block identity/);
 });
@@ -212,7 +110,7 @@ test("CLI uses the root config and configured block directory, with legacy confi
   await mkdir(join(cwd, "src/blocks/hero"), { recursive: true });
   await writeFile(
     join(cwd, "src/blocks/hero/manifest.json"),
-    JSON.stringify(getRegistryBlock("starter-astro:hero@1")),
+    JSON.stringify(heroManifest("example:hero@1")),
   );
   await writeFile(
     join(cwd, "backstage.config.ts"),
@@ -223,21 +121,6 @@ test("CLI uses the root config and configured block directory, with legacy confi
   assert.equal(rootConfigValidation.status, 0, rootConfigValidation.stderr);
   assert.match(rootConfigValidation.stdout, /Validated 1 block manifest/);
 
-  const install = runCli(["block", "install", "starter-astro:video-hero@1"], cwd);
-  assert.equal(install.status, 0, install.stderr);
-  assert.match(install.stdout, /src\/blocks\/video-hero/);
-  assert.equal(
-    JSON.parse(await readFile(join(cwd, "src/blocks/video-hero/manifest.json"), "utf8")).registry_identity,
-    "starter-astro:video-hero@1",
-  );
-
-  const fork = runCli(["block", "fork", "starter-astro:hero@1", "--namespace", "site"], cwd);
-  assert.equal(fork.status, 0, fork.stderr);
-  assert.equal(
-    JSON.parse(await readFile(join(cwd, "src/blocks/site-hero/manifest.json"), "utf8")).derived_from,
-    "starter-astro:hero@1",
-  );
-
   await mkdir(join(cwd, "backstage"), { recursive: true });
   await mkdir(join(cwd, "legacy-blocks/legacy"), { recursive: true });
   await writeFile(
@@ -246,13 +129,13 @@ test("CLI uses the root config and configured block directory, with legacy confi
   );
   await writeFile(
     join(cwd, "legacy-blocks/legacy/manifest.json"),
-    JSON.stringify(getRegistryBlock("starter-astro:contact-form@1")),
+    JSON.stringify(contactManifest()),
   );
 
   const rootTakesPrecedence = runCli(["block", "validate"], cwd);
   assert.equal(rootTakesPrecedence.status, 0, rootTakesPrecedence.stderr);
   assert.match(rootTakesPrecedence.stderr, /using backstage\.config\.ts/);
-  assert.match(rootTakesPrecedence.stdout, /Validated 3 block manifest/);
+  assert.match(rootTakesPrecedence.stdout, /Validated 1 block manifest/);
 
   const legacyCwd = await mkdtemp(join(tmpdir(), "backstage-legacy-config-"));
   t.after(() => rm(legacyCwd, { recursive: true, force: true }));
@@ -264,7 +147,7 @@ test("CLI uses the root config and configured block directory, with legacy confi
   );
   await writeFile(
     join(legacyCwd, "custom-blocks/hero/manifest.json"),
-    JSON.stringify(getRegistryBlock("starter-astro:hero@1")),
+    JSON.stringify(heroManifest("example:hero@1")),
   );
 
   const legacyValidation = runCli(["block", "validate"], legacyCwd);
@@ -279,7 +162,7 @@ test("sync blocks reads the configured manifest directory in dry-run mode", asyn
   await mkdir(join(manifestsDirectory, "hero"), { recursive: true });
   await writeFile(
     join(manifestsDirectory, "hero/manifest.json"),
-    JSON.stringify(getRegistryBlock("starter-astro:hero@1")),
+    JSON.stringify(heroManifest("example:hero@1")),
   );
 
   const originalFetch = globalThis.fetch;
@@ -311,7 +194,7 @@ test("sync blocks reads the configured manifest directory in dry-run mode", asyn
 
 test("sync creates and updates only definitions by immutable registry identity", async () => {
   const manifest = validateBlockManifest({
-    ...getRegistryBlock("backstage:hero@1"),
+    ...heroManifest(),
     slug: "sunda-hero",
     registry_identity: "sunda:hero@1",
     derived_from: "backstage:hero@1",
@@ -346,17 +229,27 @@ test("sync creates and updates only definitions by immutable registry identity",
   assert.deepEqual(await syncBlockManifests(client, [manifest]), { created: 0, updated: 0, unchanged: 1 });
   assert.equal(calls.some((call) => call.method === "update"), false);
 
-  const changedManifest = validateBlockManifest({ ...manifest, name: "Sunda Hero" });
+  const changedManifest = validateBlockManifest({
+    ...manifest,
+    schema: { fields: [
+      ...manifest.schema.fields,
+      { name: "Layout", slug: "layout", type: "select", options: [{ label: "Compact", value: "compact" }] },
+    ] },
+  });
+  assert.deepEqual(await syncBlockManifests(client, [changedManifest], { dryRun: true }), { created: 0, updated: 1, unchanged: 0 });
+  assert.equal(calls.some((call) => call.method === "update"), false);
   assert.deepEqual(await syncBlockManifests(client, [changedManifest]), { created: 0, updated: 1, unchanged: 0 });
   const update = calls.find((call) => call.method === "update");
   assert.equal(update.id, "hero-id");
+  assert.equal(update.payload.registry_identity, manifest.registry_identity);
+  assert.deepEqual(update.payload.schema, changedManifest.schema);
   assert.equal(update.payload.derived_from, "backstage:hero@1");
   assert.deepEqual(await syncBlockManifests(client, [changedManifest]), { created: 0, updated: 0, unchanged: 1 });
   assert.equal("pages" in client, false);
 });
 
 test("dry-run plans manifest changes without creating or updating account blocks", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   const writes = [];
   const client = {
     blocks: {
@@ -375,7 +268,7 @@ test("dry-run plans manifest changes without creating or updating account blocks
 });
 
 test("explicit adoption updates only an unregistered matching slug and supports dry-run", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   const legacy = {
     id: "legacy-hero-id",
     name: "Legacy Hero",
@@ -413,7 +306,7 @@ test("explicit adoption updates only an unregistered matching slug and supports 
 });
 
 test("explicit adoption never updates a slug registered to a different identity", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   let updated = false;
   const client = {
     blocks: {
@@ -433,7 +326,7 @@ test("explicit adoption never updates a slug registered to a different identity"
 });
 
 test("sync reports omitted required metadata and does not repeat writes for unsupported fields", async () => {
-  const manifest = getRegistryBlock("starter-astro:call-to-action@1");
+  const manifest = repeatableActionsManifest();
   const remote = {
     id: "cta-id",
     ...structuredClone(manifest),
@@ -476,7 +369,7 @@ test("sync reports omitted required metadata and does not repeat writes for unsu
 });
 
 test("sync treats nested blueprint slugs and resolved IDs as equivalent on repeat runs", async () => {
-  const base = getRegistryBlock("backstage:hero@1");
+  const base = heroManifest();
   const manifest = validateBlockManifest({
     ...base,
     name: "Product Hero",
@@ -569,7 +462,7 @@ test("sync treats nested blueprint slugs and resolved IDs as equivalent on repea
 });
 
 test("manifest collisions are all detected before the first account write", async () => {
-  const hero = getRegistryBlock("backstage:hero@1");
+  const hero = heroManifest();
   const first = validateBlockManifest({
     ...hero,
     registry_identity: "site:intro@1",
@@ -591,7 +484,7 @@ test("manifest collisions are all detected before the first account write", asyn
 });
 
 test("account-only schema fields refuse the entire sync before any writes", async () => {
-  const hero = getRegistryBlock("backstage:hero@1");
+  const hero = heroManifest();
   const first = validateBlockManifest({
     ...hero,
     registry_identity: "site:intro@1",
@@ -626,7 +519,7 @@ test("account-only schema fields refuse the entire sync before any writes", asyn
 });
 
 test("omitted derived_from metadata is preserved and does not cause a needless update", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   let updated = false;
   const client = {
     blocks: {
@@ -652,7 +545,7 @@ test("omitted derived_from metadata is preserved and does not cause a needless u
 
 test("manifest sync sends the merged identity fields through the existing account-block endpoint", async () => {
   const manifest = validateBlockManifest({
-    ...getRegistryBlock("backstage:hero@1"),
+    ...heroManifest(),
     slug: "sunda-hero",
     registry_identity: "sunda:hero@1",
     derived_from: "backstage:hero@1",
@@ -700,7 +593,7 @@ test("manifest sync sends the merged identity fields through the existing accoun
 });
 
 test("sync refuses to update an unregistered block when its slug conflicts", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   let updated = false;
   const client = {
     blocks: {
@@ -723,7 +616,7 @@ test("sync refuses to update an unregistered block when its slug conflicts", asy
 
 test("sync refuses to rename a registered slug that authored pages may reference", async () => {
   const manifest = validateBlockManifest({
-    ...getRegistryBlock("backstage:hero@1"),
+    ...heroManifest(),
     slug: "homepage-banner",
   });
   let updated = false;
@@ -746,7 +639,7 @@ test("sync refuses to rename a registered slug that authored pages may reference
 });
 
 test("sync does not treat a create conflict response ID as a registry identity match", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   let updated = false;
   let listCount = 0;
   const client = {
@@ -771,7 +664,7 @@ test("sync does not treat a create conflict response ID as a registry identity m
 });
 
 test("sync reconciles a concurrent create only when the matching definition is safe", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   let listCount = 0;
   let updated = false;
   const client = {
@@ -799,7 +692,7 @@ test("sync reconciles a concurrent create only when the matching definition is s
 });
 
 test("sync refuses a concurrent matching block with account-only fields", async () => {
-  const manifest = getRegistryBlock("backstage:hero@1");
+  const manifest = heroManifest();
   const accountFields = [
     ...structuredClone(manifest.schema.fields),
     { name: "Account Note", slug: "account_note", type: "text" },
@@ -833,7 +726,7 @@ test("sync refuses a concurrent matching block with account-only fields", async 
 });
 
 test("partial sync failures report completed writes for safe recovery", async () => {
-  const hero = getRegistryBlock("backstage:hero@1");
+  const hero = heroManifest();
   const manifests = [
     validateBlockManifest({
       ...hero,

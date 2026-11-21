@@ -1,16 +1,7 @@
-import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import type { BlockManifest } from "../../blocks/manifest.js";
-import { parseBlockIdentity } from "../../blocks/manifest.js";
-import {
-  getRegistryBlock,
-  listRegistryBlocks,
-  searchRegistryBlocks,
-  validateBlockManifest,
-} from "../../blocks/registry.js";
-import { astroRendererFileName, createAstroRendererScaffold } from "../../blocks/scaffold.js";
-
-const BLOCK_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+import { access, readFile, readdir, stat } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { validateBlockManifest, type BlockManifest } from "../../blocks/manifest.js";
+import { validateBlockManifests } from "../../blocks/sync.js";
 
 async function exists(path: string): Promise<boolean> {
   try {
@@ -19,74 +10,6 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
-
-async function writeBlockFiles(manifest: BlockManifest, cwd: string, blockManifestDirectory = "blocks"): Promise<string> {
-  const directory = resolve(cwd, blockManifestDirectory, manifest.slug);
-  const manifestPath = join(directory, "manifest.json");
-  const rendererFileName = astroRendererFileName(manifest.slug);
-  const rendererPath = join(directory, rendererFileName);
-
-  if ((await exists(manifestPath)) || (await exists(rendererPath))) {
-    throw new Error("Refusing to overwrite " + directory + "; manifest.json or " + rendererFileName + " already exists.");
-  }
-
-  await mkdir(dirname(directory), { recursive: true });
-  await mkdir(directory, { recursive: true });
-  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
-  await writeFile(rendererPath, createAstroRendererScaffold(manifest), { flag: "wx" });
-  return directory;
-}
-
-export function formatRegistryBlock(manifest: BlockManifest): string {
-  return `${manifest.registry_identity}  ${manifest.name}${manifest.description ? ` - ${manifest.description}` : ""}`;
-}
-
-export function listBlocks(): string[] {
-  return listRegistryBlocks().map(formatRegistryBlock);
-}
-
-export function searchBlocks(query: string): string[] {
-  return searchRegistryBlocks(query).map(formatRegistryBlock);
-}
-
-export async function installBlock(
-  identity: string,
-  cwd = process.cwd(),
-  blockManifestDirectory = "blocks",
-): Promise<string> {
-  const manifest = validateBlockManifest(getRegistryBlock(identity));
-  return writeBlockFiles(manifest, cwd, blockManifestDirectory);
-}
-
-export async function forkBlock(
-  identity: string,
-  namespace: string,
-  slug = `${namespace}-${parseBlockIdentity(identity).key}`,
-  cwd = process.cwd(),
-  blockManifestDirectory = "blocks",
-): Promise<string> {
-  const source = getRegistryBlock(identity);
-  const sourceIdentity = parseBlockIdentity(source.registry_identity);
-  const forkIdentity = `${namespace}:${sourceIdentity.key}@${sourceIdentity.version}`;
-  parseBlockIdentity(forkIdentity);
-
-  if (namespace === sourceIdentity.namespace) {
-    throw new Error(`Choose a namespace other than "${namespace}" when forking ${identity}.`);
-  }
-
-  if (!BLOCK_SLUG_PATTERN.test(slug)) {
-    throw new Error("Block slug must use lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen.");
-  }
-
-  const manifest = validateBlockManifest({
-    ...source,
-    slug,
-    registry_identity: forkIdentity,
-    derived_from: source.registry_identity,
-  });
-
-  return writeBlockFiles(manifest, cwd, blockManifestDirectory);
 }
 
 async function collectManifestPaths(path: string): Promise<string[]> {
@@ -159,20 +82,5 @@ export async function validateManifestPath(path?: string, cwd = process.cwd()): 
     throw new Error(`No block manifests found in ${target}.`);
   }
 
-  const identities = new Set<string>();
-  const slugs = new Set<string>();
-
-  for (const manifest of manifests) {
-    if (identities.has(manifest.registry_identity)) {
-      throw new Error(`Multiple local manifests use identity ${manifest.registry_identity}.`);
-    }
-    identities.add(manifest.registry_identity);
-
-    if (slugs.has(manifest.slug)) {
-      throw new Error(`Multiple local manifests use slug "${manifest.slug}".`);
-    }
-    slugs.add(manifest.slug);
-  }
-
-  return manifests.map((manifest) => manifest.registry_identity);
+  return validateBlockManifests(manifests).map((manifest) => manifest.registry_identity);
 }
