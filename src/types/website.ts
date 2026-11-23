@@ -105,6 +105,8 @@ export interface Website {
   font_families: FontFamily[] | null;
   header_navigation_id: string | null;
   footer_navigation_id: string | null;
+  /** An explicit location-hours footer override. Absent means renderer default. */
+  location_hours_footer?: "show" | "hide";
   header_navigation: Navigation | null;
   footer_navigation: Navigation | null;
   social_links: SocialLink[];

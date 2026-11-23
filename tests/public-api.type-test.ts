@@ -18,6 +18,9 @@ type ResolvedRoutePath = ResolvedRoute["meta"]["path"];
 
 const structuredData: Promise<StructuredDataDocument> = client.structuredData.get();
 void structuredData;
+const locationHoursFooter: Promise<"show" | "hide" | undefined> = client.website.getWebsite()
+  .then((website) => website.location_hours_footer);
+void locationHoursFooter;
 void pages.getPages();
 void pages.createPage({ title: "About", slug: "/about", website_id: "website-id", parent_id: null });
 void pages.updatePage("page-id", { website_id: "website-id", parent_id: null });
