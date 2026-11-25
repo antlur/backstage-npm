@@ -522,7 +522,7 @@ For questions or support, please open an issue on GitHub or contact the Backstag
 
 ## Headless theme token declarations
 
-Declaration sync is available in SDK 1.22.0; explicit design sources are available in 1.23.0.
+Theme declaration sync is available in SDK 2.0.0; radius declarations are available in SDK 2.1.0.
 
 Design ownership is configured independently from content and API credentials. It
 defaults to local when `designTokens` or `source` is omitted:
@@ -546,7 +546,7 @@ Add `designTokens: { source: "backstage" }` to keep syncing. API credentials and
 Backstage content alone do not opt a site into managed design. Builds remain
 read-only; declaration registration is an explicit CLI action.
 
-Register the color roles a site supports with the deployed website theme-token API:
+Register the color and radius roles a site supports with the deployed website theme-token API:
 
 ```ts
 export default defineConfig({
@@ -557,6 +557,12 @@ export default defineConfig({
       type: "color",
       cssVariable: "--theme-color-action",
       default: "#294C3D",
+    },
+    "button-radius": {
+      label: "Button radius",
+      type: "radius",
+      cssVariable: "--theme-radius-button",
+      default: "pill",
     },
   },
 });
@@ -576,10 +582,13 @@ setting it to `{}` explicitly clears declarations while preserving saved values.
 Backstage account token with website write access; read-only build tokens still work
 for reading values.
 
-Only color tokens are supported. The API accepts a hex default and editor overrides
-of `#RGB`, `#RRGGBB`, or `palette:<palette token or name>`. SDK exports include
-`ColorThemeToken`, `ThemeTokenDeclarations`, `WebsiteThemeTokens`, and
-`ThemeTokensUpdate`; `Website.theme_tokens` is optional for older-server compatibility.
+Color and radius tokens are supported. The API accepts a hex default and editor
+overrides of `#RGB`, `#RRGGBB`, or `palette:<palette token or name>` for colors, and
+`pill` or `0px` through `32px` for radii. Radius values are strings, remain canonical
+lowercase on the wire, and renderers map `pill` to `9999px` only when emitting CSS.
+SDK exports include `ColorThemeToken`, `RadiusThemeToken`, `RadiusThemeTokenValue`,
+`ThemeTokenDeclarations`, `WebsiteThemeTokens`, `ThemeTokensUpdate`, and
+`normalizeThemeRadius`; `Website.theme_tokens` is optional for older-server compatibility.
 Renderers resolve palette overrides from `website.theme.colors.palette`, leave
 local CSS defaults in control when an override is missing or no longer resolves,
 and emit CSS variables during their normal site build. Declaration sync does not modify

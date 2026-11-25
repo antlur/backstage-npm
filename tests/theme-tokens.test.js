@@ -5,7 +5,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { defineConfig, resolveDesignTokenSource, validateThemeTokenDeclarations } from "../dist/index.js";
+import { defineConfig, normalizeThemeRadius, resolveDesignTokenSource, validateThemeTokenDeclarations } from "../dist/index.js";
 import { syncThemeTokens } from "../dist/cli/actions/sync-theme-tokens.js";
 
 const declarations = {
@@ -13,7 +13,7 @@ const declarations = {
 };
 const normalized = validateThemeTokenDeclarations(declarations);
 const config = { accountId: "account-1", token: "test-token", baseURL: "https://example.test/api", designTokens: { source: "backstage" } };
-const website = (tokens = {}) => ({ id: "website-1", theme_tokens: { tokens, values: { action: "palette:primary", retired: "#123456" } } });
+const website = (tokens = {}, values = { action: "palette:primary", retired: "#123456" }) => ({ id: "website-1", theme_tokens: { tokens, values } });
 
 async function withServerState(websites, callback, failure) {
   const originalFetch = globalThis.fetch;
@@ -64,6 +64,58 @@ test("declarations match the API's normalization and reject unsupported token ty
   assert.throws(() => validateThemeTokenDeclarations({ "bad.key": declarations.action }), /invalid token key/);
   assert.throws(() => validateThemeTokenDeclarations([]), /must be an object/);
   assert.throws(() => validateThemeTokenDeclarations(Object.fromEntries(Array.from({ length: 129 }, (_, i) => [`t${i}`, declarations.action]))), /128/);
+});
+
+test("radius declarations normalize canonical values and reject invalid defaults and variables", () => {
+  assert.equal(normalizeThemeRadius(" pill "), "pill");
+  assert.equal(normalizeThemeRadius(" 32px "), "32px");
+  for (const value of [null, 12, "PILL", " 33px ", "1 px", "9999px"]) {
+    assert.equal(normalizeThemeRadius(value), null);
+  }
+
+  const radius = {
+    label: " Button radius ",
+    type: "radius",
+    cssVariable: " --theme-radius-button ",
+    default: " 12px ",
+  };
+  assert.deepEqual(validateThemeTokenDeclarations({ "button-radius": radius }), {
+    "button-radius": {
+      label: "Button radius",
+      type: "radius",
+      cssVariable: "--theme-radius-button",
+      default: "12px",
+    },
+  });
+  for (const patch of [
+    { default: "33px" },
+    { default: "PILL" },
+    { default: 12 },
+    { cssVariable: "--theme-color-button" },
+    { cssVariable: `--theme-radius-${"a".repeat(70)}` },
+    { extra: true },
+  ]) assert.throws(() => validateThemeTokenDeclarations({ "button-radius": { ...radius, ...patch } }), /Theme token/);
+});
+
+test("sync accepts mixed color and radius declarations and preserves editor values", async () => {
+  const state = website({
+    action: normalized.action,
+    "button-radius": { label: "Button radius", type: "radius", cssVariable: "--theme-radius-button", default: "8px" },
+  }, { action: "palette:primary", "button-radius": "pill", retired: "#123456" });
+  const mixedDeclarations = {
+    action: declarations.action,
+    "button-radius": { label: " Button radius ", type: "radius", cssVariable: " --theme-radius-button ", default: " 12px " },
+  };
+  const mixedNormalized = validateThemeTokenDeclarations(mixedDeclarations);
+
+  await withServerState([state], async (calls) => {
+    assert.deepEqual(await syncThemeTokens({ ...config, themeTokens: mixedDeclarations }), { websiteId: "website-1", changed: true });
+    const write = calls.find((call) => call.method === "PUT");
+    assert.deepEqual(JSON.parse(write.body), { theme_tokens: { tokens: mixedNormalized } });
+    assert.deepEqual(state.theme_tokens.values, { action: "palette:primary", "button-radius": "pill", retired: "#123456" });
+    assert.equal((await syncThemeTokens({ ...config, themeTokens: mixedDeclarations })).changed, false);
+    assert.equal(calls.filter((call) => call.method === "PUT").length, 1);
+  });
 });
 
 test("sync updates declarations only and becomes a no-op after server normalization", async () => {
