@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 — Unreleased
+
+### Added
+
+- Add typed radius theme-token declarations and canonical `pill` or `0px`-`32px` values for site-wide button-radius styling. Radius declarations use the `--theme-radius-*` CSS-variable namespace and preserve `pill` on the wire for render-time mapping.
+
 ## 1.22.0 — Unreleased
 
 ### Added

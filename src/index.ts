@@ -38,4 +38,4 @@ export * from "./blocks/manifest.js";
 export * from "./blocks/sync.js";
 export * from "./layouts/manifest.js";
 
-export { validateThemeTokenDeclarations } from "./theme-tokens/declarations.js";
+export { normalizeThemeRadius, validateThemeTokenDeclarations } from "./theme-tokens/declarations.js";
