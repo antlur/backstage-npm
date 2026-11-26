@@ -1,8 +1,29 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { BackstageClient } from "../client.js";
+import { BackstageClient } from "../client.js";
 import { NavigationService } from "./navigation.js";
+
+test("BackstageClient treats successful no-content responses as success", async (context) => {
+  const errors: Error[] = [];
+  const client = new BackstageClient({
+    baseURL: "https://cms.example/api",
+    accountId: "account-1",
+    token: "test-token",
+    onError: (error) => errors.push(error),
+  });
+  const mockFetch: typeof fetch = async (_url, options) =>
+    options?.method === "DELETE"
+      ? new Response(null, { status: 204 })
+      : new Response(null, { status: 205 });
+  const fetchMock = context.mock.method(globalThis, "fetch", mockFetch);
+
+  assert.equal(await client.delete<void>("/navigations/navigation-1"), undefined);
+  assert.equal(await client.post<void>("/reset"), undefined);
+  assert.equal(fetchMock.mock.calls[0].arguments[0], "https://cms.example/api/navigations/navigation-1");
+  assert.equal(new Headers(fetchMock.mock.calls[0].arguments[1]?.headers).get("x-account-id"), "account-1");
+  assert.deepEqual(errors, []);
+});
 
 test("NavigationService builds navigation trees at every nesting depth", async () => {
   const items = [

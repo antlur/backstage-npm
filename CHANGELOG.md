@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1 — Unreleased
+
+### Fixed
+
+- Handle successful HTTP 204 and 205 responses without attempting to parse JSON. This includes Backstage's navigation deletion endpoint.
+
 ## 2.1.0 — Unreleased
 
 ### Added

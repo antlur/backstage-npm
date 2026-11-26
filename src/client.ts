@@ -146,6 +146,9 @@ export class BackstageClient {
         (error as any).response = { status: response.status, data: errorData };
         throw error;
       }
+      if (response.status === 204 || response.status === 205) {
+        return undefined as T;
+      }
       return await response.json();
     } catch (error) {
       if (this.onError) this.onError(error as Error);
